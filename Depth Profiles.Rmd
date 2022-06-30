@@ -20,6 +20,8 @@ install.packages(lubridate)
 library(lubridiate)
 install.packages(dplyr)
 library(dplyr)
+install.packages(tidyverse)
+library(tidyverse)
 ```
 
 
@@ -58,7 +60,6 @@ select(UTC_header, -c("Date.time")) #Delete the old datetime column
 
 ### Step 4: Apply this set of functions to the whole dataset. 
 ```{r full_dt_conversion, message = FALSE}
-#dt_conversion <- "m/%d/%y %H:%M:%S"
 datetime_col <- pull(depth_data, "Date.time") #creates a vector with all datetimes
 UTC_vec <- parse_date_time(datetime_col, dt_conversion) #changes into UTC
 UTC_col <- data.frame(UTC_vec) #changes it back into a df 
@@ -72,6 +73,22 @@ depth_data_UTC <- rename(depth_data_UTC, DateTime = UTC_vec) #renames the dateti
 head(depth_data_UTC)
 ```
 
+# Task #3 Make Figures
+1. Depth profile for the whole deployment
+1. Depth profile for 1 day 
+1. Depth profile for 1 dive 
+
+### Step 1: Make a plot for the whole deployment 
+```{r plot_deployment}
+library(tidyverse)
+ggplot(depth_data_UTC, aes(x = DateTime, y = Depth)) + 
+  geom_line() +
+  scale_y_reverse() + #makes depth right orientation 
+  labs(title = "Asgeir Depth Profile 2018",
+       x = "Time",
+       y = "Depth (m)") + #changes labels on axes and title 
+  theme_bw()  #white background 
+```
 
 
 
