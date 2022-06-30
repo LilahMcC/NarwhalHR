@@ -9,3 +9,30 @@ output:
   theme: paper 
   highlights: monotone
 ---
+# Questions for Max:
+1. Do I need to install a package at the beginning of every RMarkdown file? eg. lubridate  
+1. Do I need to call the library at the beginning of every chunk of code?   
+
+# Task #1: Read the file into a dataframe. 
+### Step 1: load the data. **Note:** Make sure you spell the name of the file correctly :(
+```{r = read_txt_file}
+depth_data <- read.delim("Depth_Asgeir.txt")
+head(depth_data)
+class(depth_data) #checks that the file has been read as a dataframe.
+```
+
+# Task #2: Convert the datetime column from character to POSIXct. 
+### Step 1: Outline changes that need to happen.  
+Format of datetime entry in data:  
+`m/dd/yy hh:mm:ss`
+`parse_datetime()` expects: 
+`yyyy/mm/dd hh:mm:ss`
+
+### Step 2: Figure out how we need to manipulate the given date using a practice character vector 
+```{r = practice_datetime}
+library(lubridate)
+parse_date_time("8/30/22", "m/%d/%y")
+```
+
+
+

@@ -370,7 +370,55 @@ pre code {
 </div>
 
 
-
+<div id="questions-for-max" class="section level1">
+<h1>Questions for Max:</h1>
+<ol style="list-style-type: decimal">
+<li>Do I need to install a package at the beginning of every RMarkdown
+file? eg. lubridate<br />
+</li>
+<li>Do I need to call the library at the beginning of every chunk of
+code?</li>
+</ol>
+</div>
+<div id="task-1-read-the-file-into-a-dataframe." class="section level1">
+<h1>Task #1: Read the file into a dataframe.</h1>
+<div id="step-1-load-the-data.-note-make-sure-you-spell-the-name-of-the-file-correctly" class="section level3">
+<h3>Step 1: load the data. <strong>Note:</strong> Make sure you spell
+the name of the file correctly :(</h3>
+<pre class="r"><code>depth_data &lt;- read.delim(&quot;Depth_Asgeir.txt&quot;)
+head(depth_data)</code></pre>
+<pre><code>##          Date.time Depth Clicking Buzzing
+## 1 8/23/18 22:46:00   0.8      NaN     NaN
+## 2 8/23/18 22:46:01   1.0      NaN     NaN
+## 3 8/23/18 22:46:02   1.1      NaN     NaN
+## 4 8/23/18 22:46:03   1.2      NaN     NaN
+## 5 8/23/18 22:46:04   1.1      NaN     NaN
+## 6 8/23/18 22:46:05   1.1      NaN     NaN</code></pre>
+<pre class="r"><code>class(depth_data) #checks that the file has been read as a dataframe.</code></pre>
+<pre><code>## [1] &quot;data.frame&quot;</code></pre>
+</div>
+</div>
+<div id="task-2-convert-the-datetime-column-from-character-to-posixct." class="section level1">
+<h1>Task #2: Convert the datetime column from character to POSIXct.</h1>
+<div id="step-1-outline-changes-that-need-to-happen." class="section level3">
+<h3>Step 1: Outline changes that need to happen.</h3>
+<p>Format of datetime entry in data:<br />
+<code>m/dd/yy hh:mm:ss</code> <code>parse_datetime()</code> expects:
+<code>yyyy/mm/dd hh:mm:ss</code></p>
+</div>
+<div id="step-2-figure-out-how-we-need-to-manipulate-the-given-date-using-a-practice-character-vector" class="section level3">
+<h3>Step 2: Figure out how we need to manipulate the given date using a
+practice character vector</h3>
+<pre class="r"><code>library(lubridate)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;lubridate&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     date, intersect, setdiff, union</code></pre>
+<pre class="r"><code>parse_date_time(&quot;8/30/22&quot;, &quot;m/%d/%y&quot;)</code></pre>
+<pre><code>## [1] &quot;2022-08-30 UTC&quot;</code></pre>
+</div>
+</div>
 
 
 
