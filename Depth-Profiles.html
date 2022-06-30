@@ -1591,6 +1591,27 @@ select(UTC_header, -c(&quot;Date.time&quot;)) #Delete the old datetime column </
 ## 5 2018-08-23 22:46:04   1.1      NaN     NaN
 ## 6 2018-08-23 22:46:05   1.1      NaN     NaN</code></pre>
 </div>
+<div id="step-4-apply-this-set-of-functions-to-the-whole-dataset." class="section level3">
+<h3>Step 4: Apply this set of functions to the whole dataset.</h3>
+<pre class="r"><code>#dt_conversion &lt;- &quot;m/%d/%y %H:%M:%S&quot;
+datetime_col &lt;- pull(depth_data, &quot;Date.time&quot;) #creates a vector with all datetimes
+UTC_vec &lt;- parse_date_time(datetime_col, dt_conversion) #changes into UTC
+UTC_col &lt;- data.frame(UTC_vec) #changes it back into a df 
+depth_data_UTC &lt;- mutate(depth_data, UTC_col, .before = &quot;Date.time&quot;) #Adds UTC datetime column in before old date time column 
+depth_data_UTC &lt;- select(depth_data_UTC, -c(&quot;Date.time&quot;)) #delete old datetime column
+depth_data_UTC &lt;- rename(depth_data_UTC, DateTime = UTC_vec) #renames the datetime column </code></pre>
+</div>
+<div id="step-5-print-header-to-show-the-new-table" class="section level3">
+<h3>Step 5: Print header to show the new table</h3>
+<pre class="r"><code>head(depth_data_UTC)</code></pre>
+<pre><code>##              DateTime Depth Clicking Buzzing
+## 1 2018-08-23 22:46:00   0.8      NaN     NaN
+## 2 2018-08-23 22:46:01   1.0      NaN     NaN
+## 3 2018-08-23 22:46:02   1.1      NaN     NaN
+## 4 2018-08-23 22:46:03   1.2      NaN     NaN
+## 5 2018-08-23 22:46:04   1.1      NaN     NaN
+## 6 2018-08-23 22:46:05   1.1      NaN     NaN</code></pre>
+</div>
 </div>
 
 

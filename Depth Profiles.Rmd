@@ -56,5 +56,22 @@ UTC_header <- mutate(header, UTC_df, .before = "Date.time") #adds the UTC date t
 select(UTC_header, -c("Date.time")) #Delete the old datetime column 
 ```
 
+### Step 4: Apply this set of functions to the whole dataset. 
+```{r full_dt_conversion, message = FALSE}
+#dt_conversion <- "m/%d/%y %H:%M:%S"
+datetime_col <- pull(depth_data, "Date.time") #creates a vector with all datetimes
+UTC_vec <- parse_date_time(datetime_col, dt_conversion) #changes into UTC
+UTC_col <- data.frame(UTC_vec) #changes it back into a df 
+depth_data_UTC <- mutate(depth_data, UTC_col, .before = "Date.time") #Adds UTC datetime column in before old date time column 
+depth_data_UTC <- select(depth_data_UTC, -c("Date.time")) #delete old datetime column
+depth_data_UTC <- rename(depth_data_UTC, DateTime = UTC_vec) #renames the datetime column 
+```
+
+### Step 5: Print header to show the new table
+```{r = print_new_header}
+head(depth_data_UTC)
+```
+
+
 
 
