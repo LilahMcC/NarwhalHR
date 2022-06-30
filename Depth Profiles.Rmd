@@ -14,14 +14,13 @@ output:
 1. Do I need to call the library at the beginning of every chunk of code? 
 
 
-# Before Starting: Install packages and load libraries
+# Before Starting: load libraries
 ```{r = load_packages, eval = FALSE}
-install.packages(lubridate)
 library(lubridiate)
-install.packages(dplyr)
 library(dplyr)
-install.packages(tidyverse)
 library(tidyverse)
+library(DT)
+library(plotly)
 ```
 
 
@@ -78,13 +77,29 @@ head(depth_data_UTC)
 1. Depth profile for 1 day 
 1. Depth profile for 1 dive 
 
-### Step 1: Make a plot for the whole deployment 
+### Step 1: Make a plot for the whole deployment   
 ```{r plot_deployment}
 library(tidyverse)
 ggplot(depth_data_UTC, aes(x = DateTime, y = Depth)) + 
   geom_line() +
   scale_y_reverse() + #makes depth right orientation 
   labs(title = "Asgeir Depth Profile 2018",
+       x = "Time",
+       y = "Depth (m)") + #changes labels on axes and title 
+  theme_bw()  #white background 
+```
+
+### Step 2: Make a plot for 1 day  
+
+I'm a little confused on this one - This is a 24 hour period, but it doesn't start at midnight, and I think we might need to know the timezone for this one.
+```{r plot_day}
+start_day <- as.POSIXct('2018-08-24 00:00:00')
+end_day <- as.POSIXct('2018-08-24 23:59:59')
+one_day <- dplyr::filter(depth_data_UTC, DateTime >= start_day, DateTime <= end_day)
+ggplot(one_day, aes(x = DateTime, y = Depth)) + 
+  geom_line() +
+  scale_y_reverse() + #makes depth right orientation 
+  labs(title = "Asgeir Depth Profile One Day 2018",
        x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
   theme_bw()  #white background 
