@@ -4,34 +4,56 @@ author: "Lilah McCormick"
 date: '2022-06-30'
 output: 
   html_document:
-  toc: yes
-  toc_float: yes 
-  theme: paper 
-  highlights: monotone
+    toc: yes
+    toc_float: yes 
+    theme: default 
+    highlights: monotone
 ---
 # Questions for Max:
 1. Do I need to install a package at the beginning of every RMarkdown file? eg. lubridate  
-1. Do I need to call the library at the beginning of every chunk of code?   
+1. Do I need to call the library at the beginning of every chunk of code? 
 
-# Task #1: Read the file into a dataframe. 
-### Step 1: load the data. **Note:** Make sure you spell the name of the file correctly :(
-```{r = read_txt_file}
-depth_data <- read.delim("Depth_Asgeir.txt")
-head(depth_data)
-class(depth_data) #checks that the file has been read as a dataframe.
+
+# Before Starting: Install packages and load libraries
+```{r = load_packages, eval = FALSE}
+install.packages(lubridate)
+library(lubridiate)
+install.packages(dplyr)
+library(dplyr)
 ```
 
-# Task #2: Convert the datetime column from character to POSIXct. 
-### Step 1: Outline changes that need to happen.  
-Format of datetime entry in data:  
+
+# Task #1: Read the file into a dataframe.   
+### Step 1: load the data.
+```{r = read_txt_file}
+depth_data <- read.delim("Depth_Asgeir.txt")
+header <- head(depth_data)
+class(depth_data) #checks that the file has been read as a dataframe.
+```
+    
+# Task #2: Convert the datetime column from character to POSIXct.   
+### Step 1: Outline changes that need to happen.    
+Format of datetime entry in data:    
 `m/dd/yy hh:mm:ss`
 `parse_datetime()` expects: 
 `yyyy/mm/dd hh:mm:ss`
 
-### Step 2: Figure out how we need to manipulate the given date using a practice character vector 
+### Step 2: Figure out how we need to manipulate the given date using the date from the first entry  
 ```{r = practice_datetime}
 library(lubridate)
-parse_date_time("8/30/22", "m/%d/%y")
+line_one <- "8/23/18 22:46:01"
+dt_conversion <- "m/%d/%y %H:%M:%S"
+parse_date_time(line_one, dt_conversion)
+```
+
+### Step 3: Test it on the header. I'm pretty sure there's a better way to do this, but I haven't figured it out. 
+```{r = header_datetime_test}
+library(dplyr)
+header_datetime <- pull(header, "Date.time") #create a vector with first 6 datetimes
+UTC_date_time <- parse_date_time(header_datetime, dt_conversion) #vector with first 6 datetimes in UTC
+UTC_df <- data.frame(UTC_date_time) #turn the vector back into a column 
+UTC_header <- mutate(header, UTC_df, .before = "Date.time") #adds the UTC date time column into the header df before the old datetime column 
+select(UTC_header, -c("Date.time")) #Delete the old datetime column 
 ```
 
 
