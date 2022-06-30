@@ -80,29 +80,50 @@ head(depth_data_UTC)
 ### Step 1: Make a plot for the whole deployment   
 ```{r plot_deployment}
 library(tidyverse)
-ggplot(depth_data_UTC, aes(x = DateTime, y = Depth)) + 
+library(plotly)
+deployment_plot <- ggplot(depth_data_UTC, aes(x = DateTime, y = Depth)) + 
   geom_line() +
   scale_y_reverse() + #makes depth right orientation 
   labs(title = "Asgeir Depth Profile 2018",
        x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
   theme_bw()  #white background 
+ggplotly(deployment_plot)
 ```
 
 ### Step 2: Make a plot for 1 day  
 
 I'm a little confused on this one - This is a 24 hour period, but it doesn't start at midnight, and I think we might need to know the timezone for this one.
 ```{r plot_day}
+library(plotly)
 start_day <- as.POSIXct('2018-08-24 00:00:00')
 end_day <- as.POSIXct('2018-08-24 23:59:59')
 one_day <- dplyr::filter(depth_data_UTC, DateTime >= start_day, DateTime <= end_day)
-ggplot(one_day, aes(x = DateTime, y = Depth)) + 
+day_plot<- ggplot(one_day, aes(x = DateTime, y = Depth)) + #filters datetime to 24 hour period
   geom_line() +
   scale_y_reverse() + #makes depth right orientation 
-  labs(title = "Asgeir Depth Profile One Day 2018",
+  labs(title = "Asgeir 24 Hour Depth Profile 2018",
        x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
   theme_bw()  #white background 
+ggplotly(day_plot) #makes plot interactive 
+```
+
+### Step 3: Make a plot for 1 dive
+Also have to figure out some time zone stuff on this one. 
+```{r}
+library(plotly)
+start_dive_time <- as.POSIXct('2018-08-24 15:26:01') #selected times from interactive day plot 
+end_dive_time <- as.POSIXct('2018-08-24 15:49:04')
+one_dive <- dplyr::filter(depth_data_UTC, DateTime >= start_dive_time, DateTime <= end_dive_time)
+dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) + #filters datetime to 24 hour period
+  geom_line() +
+  scale_y_reverse() + #makes depth right orientation 
+  labs(title = "Asgeir Single Dive Depth Profile 2018",
+       x = "Time",
+       y = "Depth (m)") + #changes labels on axes and title 
+  theme_bw()  #white background 
+ggplotly(dive_plot)
 ```
 
 
