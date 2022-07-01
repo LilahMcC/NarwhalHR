@@ -15,11 +15,10 @@ output:
 
 
 # Before Starting: load libraries
-```{r = load_packages, eval = FALSE}
-library(lubridiate)
+```{r = load_packages, messages = FALSE}
+library(lubridate)
 library(dplyr)
 library(tidyverse)
-library(DT)
 library(plotly)
 ```
 
@@ -28,6 +27,7 @@ library(plotly)
 ### Step 1: load the data.
 ```{r = read_txt_file}
 depth_data <- read.delim("Depth_Asgeir.txt")
+#depth_data <- read_delim("Depth_Asgeir.txt")
 header <- head(depth_data)
 class(depth_data) #checks that the file has been read as a dataframe.
 ```
@@ -41,7 +41,6 @@ Format of datetime entry in data:
 
 ### Step 2: Figure out how we need to manipulate the given date using the date from the first entry  
 ```{r = practice_datetime}
-library(lubridate)
 line_one <- "8/23/18 22:46:01"
 dt_conversion <- "m/%d/%y %H:%M:%S"
 parse_date_time(line_one, dt_conversion)
@@ -49,7 +48,6 @@ parse_date_time(line_one, dt_conversion)
 
 ### Step 3: Test it on the header. I'm pretty sure there's a better way to do this, but I haven't figured it out. 
 ```{r = header_datetime_test}
-library(dplyr)
 header_datetime <- pull(header, "Date.time") #create a vector with first 6 datetimes
 UTC_date_time <- parse_date_time(header_datetime, dt_conversion) #vector with first 6 datetimes in UTC
 UTC_df <- data.frame(UTC_date_time) #turn the vector back into a column 
@@ -79,8 +77,6 @@ head(depth_data_UTC)
 
 ### Step 1: Make a plot for the whole deployment   
 ```{r plot_deployment}
-library(tidyverse)
-library(plotly)
 deployment_plot <- ggplot(depth_data_UTC, aes(x = DateTime, y = Depth)) + 
   geom_line() +
   scale_y_reverse() + #makes depth right orientation 
@@ -88,14 +84,12 @@ deployment_plot <- ggplot(depth_data_UTC, aes(x = DateTime, y = Depth)) +
        x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
   theme_bw()  #white background 
-ggplotly(deployment_plot)
 ```
 
 ### Step 2: Make a plot for 1 day  
 
 I'm a little confused on this one - This is a 24 hour period, but it doesn't start at midnight, and I think we might need to know the timezone for this one.
 ```{r plot_day}
-library(plotly)
 start_day <- as.POSIXct('2018-08-24 00:00:00')
 end_day <- as.POSIXct('2018-08-24 23:59:59')
 one_day <- dplyr::filter(depth_data_UTC, DateTime >= start_day, DateTime <= end_day)
@@ -112,7 +106,6 @@ ggplotly(day_plot) #makes plot interactive
 ### Step 3: Make a plot for 1 dive
 Also have to figure out some time zone stuff on this one. 
 ```{r}
-library(plotly)
 start_dive_time <- as.POSIXct('2018-08-24 15:26:01') #selected times from interactive day plot 
 end_dive_time <- as.POSIXct('2018-08-24 15:49:04')
 one_dive <- dplyr::filter(depth_data_UTC, DateTime >= start_dive_time, DateTime <= end_dive_time)
