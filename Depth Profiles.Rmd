@@ -41,16 +41,7 @@ line_one <- "8/23/18 22:46:01"
 mdy_hms(line_one)
 ```
 
-
-### Step 3: Test it on the header. I'm pretty sure there's a better way to do this, but I haven't figured it out. 
-```{r header_datetime_test}
-header_datetime <- pull(header, "Date time")#create a vector with first 6 datetimes
-UTC_date_time <- mdy_hms(header_datetime) #vector with first 6 datetimes in UTC
-UTC_df <- data.frame(UTC_date_time) #turn the vector back into a column 
-UTC_header <- mutate(header, UTC_df, .before = "Date time")#adds the UTC date time column into the header df before the old datetime column 
-UTC_header <- select(UTC_header, -c("Date time"))#Delete the old datetime column 
-```
-### Step 3 Pipe attempt - haven't figure this one out yet 
+### Step 3 Pipe on Header
 ```{r header_datetime_pipe}
 header_datetime <- read_tsv("Depth_Asgeir.txt") %>% 
   head() %>% 
@@ -58,6 +49,11 @@ header_datetime <- read_tsv("Depth_Asgeir.txt") %>%
   
 ```
 
+### Step 4 Pipe on full dataset 
+```{r = fix_datetimes}
+depth_data <- read_tsv("Depth_Asgeir.txt") %>% 
+  mutate(DateTime = mdy_hms(`Date time`), .keep = "unused")#fixes datetime
+```
 
 ### Step 4: Apply this set of functions to the whole dataset. 
 ```{r full_dt_conversion, message = FALSE}
@@ -67,14 +63,6 @@ UTC_col <- data.frame(UTC_vec) #changes it back into a df
 depth_data_UTC <- mutate(depth_data, UTC_col, .before = "Date time") #Adds UTC datetime column in before old date time column 
 depth_data_UTC <- select(depth_data_UTC, -c("Date time")) #delete old datetime column
 depth_data_UTC <- rename(depth_data_UTC, DateTime = UTC_vec) #renames the datetime column 
-```
-
-### Step 1 through 5 Combined: This is not working yet 
-```{r load_data}
-depth_data <- read_delim("Depth_Asgeir.txt") %>% 
-  mutate(depth_data, DateTimeUTC-mdy_hms(select(depth_data, "Date time"), .keep = "unused"))
-           
-  
 ```
 
 
