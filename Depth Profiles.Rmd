@@ -25,8 +25,8 @@ library(plotly)
 
 # Task #1: Read the file into a dataframe.   
 ### Step 1: load the data.
-```{r = read_txt_file}
-depth_data <- read_delim("Depth_Asgeir.txt")
+```{r read_txt_file}
+depth_data <- read_tsv("Depth_Asgeir.txt")
 header <- head(depth_data)
 class(depth_data) #checks that the file has been read as a dataframe.
 ```
@@ -52,6 +52,7 @@ UTC_df <- data.frame(UTC_date_time) #turn the vector back into a column
 UTC_header <- mutate(header, UTC_df, .before = "Date time")#adds the UTC date time column into the header df before the old datetime column 
 UTC_header <- select(UTC_header, -c("Date time"))#Delete the old datetime column 
 ```
+header_datetime <- read_tsv("Depth_Asgeir.txt") %>% 
 
 ### Step 4: Apply this set of functions to the whole dataset. 
 ```{r full_dt_conversion, message = FALSE}
