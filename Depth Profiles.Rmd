@@ -9,17 +9,14 @@ output:
     theme: default 
     highlights: monotone
 ---
-# Questions for Max:
-1. Do I need to install a package at the beginning of every RMarkdown file? eg. lubridate  
-1. Do I need to call the library at the beginning of every chunk of code? 
-
 
 # Before Starting: load libraries
 ```{r = load_packages, messages = FALSE}
 library(lubridate)
-library(dplyr)
 library(tidyverse)
 library(plotly)
+library(DT)
+library(glue)
 ```
 
 
@@ -39,20 +36,28 @@ Format of datetime entry in data:
 `yyyy/mm/dd hh:mm:ss`
 
 ### Step 2: Figure out how we need to manipulate the given date using the date from the first entry  
-```{r = practice_datetime}
+```{r practice_datetime}
 line_one <- "8/23/18 22:46:01"
 mdy_hms(line_one)
 ```
 
+
 ### Step 3: Test it on the header. I'm pretty sure there's a better way to do this, but I haven't figured it out. 
-```{r = header_datetime_test}
+```{r header_datetime_test}
 header_datetime <- pull(header, "Date time")#create a vector with first 6 datetimes
 UTC_date_time <- mdy_hms(header_datetime) #vector with first 6 datetimes in UTC
 UTC_df <- data.frame(UTC_date_time) #turn the vector back into a column 
 UTC_header <- mutate(header, UTC_df, .before = "Date time")#adds the UTC date time column into the header df before the old datetime column 
 UTC_header <- select(UTC_header, -c("Date time"))#Delete the old datetime column 
 ```
+### Step 3 Pipe attempt - haven't figure this one out yet 
+```{r header_datetime_pipe}
 header_datetime <- read_tsv("Depth_Asgeir.txt") %>% 
+  head() %>% 
+  mutate(DateTime = mdy_hms(`Date time`), .keep = "unused")  #fixes datetime 
+  
+```
+
 
 ### Step 4: Apply this set of functions to the whole dataset. 
 ```{r full_dt_conversion, message = FALSE}
@@ -63,6 +68,15 @@ depth_data_UTC <- mutate(depth_data, UTC_col, .before = "Date time") #Adds UTC d
 depth_data_UTC <- select(depth_data_UTC, -c("Date time")) #delete old datetime column
 depth_data_UTC <- rename(depth_data_UTC, DateTime = UTC_vec) #renames the datetime column 
 ```
+
+### Step 1 through 5 Combined: This is not working yet 
+```{r load_data}
+depth_data <- read_delim("Depth_Asgeir.txt") %>% 
+  mutate(depth_data, DateTimeUTC-mdy_hms(select(depth_data, "Date time"), .keep = "unused"))
+           
+  
+```
+
 
 ### Step 5: Print header to show the new table
 ```{r = print_new_header}
@@ -89,9 +103,9 @@ deployment_plot <- ggplot(depth_data_UTC, aes(x = DateTime, y = Depth)) +
 
 I'm a little confused on this one - This is a 24 hour period, but it doesn't start at midnight, and I think we might need to know the timezone for this one.
 ```{r plot_day}
-start_day <- as.POSIXct('2018-08-24 00:00:00')
-end_day <- as.POSIXct('2018-08-24 23:59:59')
-one_day <- dplyr::filter(depth_data_UTC, DateTime >= start_day, DateTime <= end_day)
+start_day <- ymd_hms('2018-08-24 00:00:00')
+end_day <- start_day + days(1)
+one_day <- filter(depth_data_UTC, DateTime >= start_day, DateTime <= end_day)
 day_plot<- ggplot(one_day, aes(x = DateTime, y = Depth)) + #filters datetime to 24 hour period
   geom_line() +
   scale_y_reverse() + #makes depth right orientation 
@@ -104,10 +118,10 @@ ggplotly(day_plot) #makes plot interactive
 
 ### Step 3: Make a plot for 1 dive
 Also have to figure out some time zone stuff on this one. 
-```{r}
-start_dive_time <- as.POSIXct('2018-08-24 15:26:01') #selected times from interactive day plot 
-end_dive_time <- as.POSIXct('2018-08-24 15:49:04')
-one_dive <- dplyr::filter(depth_data_UTC, DateTime >= start_dive_time, DateTime <= end_dive_time)
+```{r plot_one_dive}
+start_dive_time <- ymd_hms('2018-08-24 08:26:01') #selected times from interactive day plot 
+end_dive_time <- ymd_hms('2018-08-24 08:49:04')
+one_dive <- filter(depth_data_UTC, DateTime >= start_dive_time, DateTime <= end_dive_time)
 dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) + #filters datetime to 24 hour period
   geom_line() +
   scale_y_reverse() + #makes depth right orientation 
@@ -115,7 +129,8 @@ dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) + #filters datetime 
        x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
   theme_bw()  #white background 
-ggplotly(dive_plot)
+#ggplotly(dive_plot)
+dive_plot
 ```
 
 
