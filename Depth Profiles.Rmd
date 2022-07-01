@@ -10,8 +10,8 @@ output:
     highlights: monotone
 ---
 
-# Before Starting: load libraries
-```{r = load_packages, messages = FALSE}
+### Before Starting: load libraries
+```{r = load_packages, messages = FALSE, echo = FALSE}
 library(lubridate)
 library(tidyverse)
 library(plotly)
@@ -20,80 +20,34 @@ library(glue)
 ```
 
 
-# Task #1: Read the file into a dataframe.   
-### Step 1: load the data.
-```{r read_txt_file}
-depth_data <- read_tsv("Depth_Asgeir.txt")
-header <- head(depth_data)
-class(depth_data) #checks that the file has been read as a dataframe.
-```
-    
-# Task #2: Convert the datetime column from character to POSIXct.   
-### Step 1: Outline changes that need to happen.    
-Format of datetime entry in data:    
-`m/dd/yy hh:mm:ss`
-`parse_datetime()` expects: 
-`yyyy/mm/dd hh:mm:ss`
-
-### Step 2: Figure out how we need to manipulate the given date using the date from the first entry  
-```{r practice_datetime}
-line_one <- "8/23/18 22:46:01"
-mdy_hms(line_one)
-```
-
-### Step 3 Pipe on Header
-```{r header_datetime_pipe}
-header_datetime <- read_tsv("Depth_Asgeir.txt") %>% 
-  head() %>% 
-  mutate(DateTime = mdy_hms(`Date time`), .keep = "unused")  #fixes datetime 
-  
-```
-
-### Step 4 Pipe on full dataset 
-```{r = fix_datetimes}
+### Task 1 and 2:  
+Read the file into a dataframe, and make DateTimes compatible with POSIXct 
+```{r = fix_datetimes, messages = FALSE}
 depth_data <- read_tsv("Depth_Asgeir.txt") %>% 
   mutate(DateTime = mdy_hms(`Date time`), .keep = "unused")#fixes datetime
 ```
 
-### Step 4: Apply this set of functions to the whole dataset. 
-```{r full_dt_conversion, message = FALSE}
-datetime_col <- pull(depth_data, "Date time") #creates a vector with all datetimes
-UTC_vec <- mdy_hms(datetime_col) #changes into UTC
-UTC_col <- data.frame(UTC_vec) #changes it back into a df 
-depth_data_UTC <- mutate(depth_data, UTC_col, .before = "Date time") #Adds UTC datetime column in before old date time column 
-depth_data_UTC <- select(depth_data_UTC, -c("Date time")) #delete old datetime column
-depth_data_UTC <- rename(depth_data_UTC, DateTime = UTC_vec) #renames the datetime column 
-```
+### Task 3   
+**Make Figures**  
+1. Depth profile for the whole deployment  
+1. Depth profile for 1 day   
+1. Depth profile for 1 dive   
 
-
-### Step 5: Print header to show the new table
-```{r = print_new_header}
-head(depth_data_UTC)
-```
-
-# Task #3 Make Figures
-1. Depth profile for the whole deployment
-1. Depth profile for 1 day 
-1. Depth profile for 1 dive 
-
-### Step 1: Make a plot for the whole deployment   
-```{r plot_deployment}
-deployment_plot <- ggplot(depth_data_UTC, aes(x = DateTime, y = Depth)) + 
+```{r plot_deployment, messages = FALSE, echo = FALSE}
+deployment_plot <- ggplot(depth_data, aes(x = DateTime, y = Depth)) + 
   geom_line() +
   scale_y_reverse() + #makes depth right orientation 
   labs(title = "Asgeir Depth Profile 2018",
        x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
   theme_bw()  #white background 
+deployment_plot
 ```
 
-### Step 2: Make a plot for 1 day  
-
-I'm a little confused on this one - This is a 24 hour period, but it doesn't start at midnight, and I think we might need to know the timezone for this one.
-```{r plot_day}
+```{r plot_day, messages = FALSE, echo = FALSE}
 start_day <- ymd_hms('2018-08-24 00:00:00')
 end_day <- start_day + days(1)
-one_day <- filter(depth_data_UTC, DateTime >= start_day, DateTime <= end_day)
+one_day <- filter(depth_data, DateTime >= start_day, DateTime <= end_day)
 day_plot<- ggplot(one_day, aes(x = DateTime, y = Depth)) + #filters datetime to 24 hour period
   geom_line() +
   scale_y_reverse() + #makes depth right orientation 
@@ -104,12 +58,10 @@ day_plot<- ggplot(one_day, aes(x = DateTime, y = Depth)) + #filters datetime to 
 ggplotly(day_plot) #makes plot interactive 
 ```
 
-### Step 3: Make a plot for 1 dive
-Also have to figure out some time zone stuff on this one. 
-```{r plot_one_dive}
+```{r plot_one_dive, message = FALSE, echo = FALSE}
 start_dive_time <- ymd_hms('2018-08-24 08:26:01') #selected times from interactive day plot 
 end_dive_time <- ymd_hms('2018-08-24 08:49:04')
-one_dive <- filter(depth_data_UTC, DateTime >= start_dive_time, DateTime <= end_dive_time)
+one_dive <- filter(depth_data, DateTime >= start_dive_time, DateTime <= end_dive_time)
 dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) + #filters datetime to 24 hour period
   geom_line() +
   scale_y_reverse() + #makes depth right orientation 
