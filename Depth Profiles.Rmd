@@ -34,66 +34,51 @@ depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file
 1. Depth profile for 1 day   
 1. Depth profile for 1 dive   
 
-```{r plot_deployment, message = FALSE, echo = FALSE}
-deployment_plot <- ggplot(depth_data, aes(x = DateTime, y = Depth)) +
-  geom_line() + 
-  scale_y_reverse() + #makes depth right orientation 
-  labs(title = "Asgeir Depth Profile 2018",
-       x = "Time",
-       y = "Depth (m)") + #changes labels on axes and title 
-  theme_bw()  #white background 
-deployment_plot
-```
+```{r plot_dive_func, message = FALSE, echo = FALSE}
+# plot_dive_func plots a dive profile given a set of parameters to minimize repetition of code when plotting dive profiles at multiple timescales.
 
-```{r plot_day, message = FALSE, echo = FALSE}
-start_day <- ymd_hms('2018-08-24 00:00:00')
-end_day <- start_day + days(1)
-one_day <- filter(depth_data, DateTime >= start_day, DateTime <= end_day) #sets time period
-day_plot<- ggplot(one_day, aes(x = DateTime, y = Depth)) + 
-  geom_line() +
-  scale_y_reverse() + #makes depth right orientation 
-  labs(title = "Asgeir 24 Hour Depth Profile 2018",
-       x = "Time",
-       y = "Depth (m)") + #changes labels on axes and title 
-  theme_bw()  #white background 
-day_plot
-#ggplotly(day_plot) #makes plot interactive 
-```
+# Parameters: 
+# dataframe - must be a dataframe. 
+# start_time/end_time - must be character strings in 'YYYY-MM-DD hh:mm:ss' format.
+# title - must be a character string in "Graph Title" format. 
+# interactive - FALSE (default) plots a regular graph, TRUE plots an interactive graph. 
 
-```{r plot_one_dive, message = FALSE, echo = FALSE}
-start_dive_time <- ymd_hms('2018-08-24 08:26:01') #selected times from interactive day plot 
-end_dive_time <- ymd_hms('2018-08-24 08:49:04')
-one_dive <- filter(depth_data, DateTime >= start_dive_time, DateTime <= end_dive_time)
-dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) + #filters datetime to 24 hour period
-  geom_line() +
-  scale_y_reverse() + #makes depth right orientation 
-  labs(title = "Asgeir Single Dive Depth Profile 2018",
-       x = "Time",
-       y = "Depth (m)") + #changes labels on axes and title 
-  theme_bw()  #white background 
-dive_plot
-#ggplotly(dive_plot)
-```
-
-Write function: 
-```{r plot_dive_func}
-plot_dive <- function(dataframe, start_time, end_time, interactive = FALSE) {
+plot_dive <- function(dataframe, start_time, end_time, title, interactive = FALSE) {
   one_dive <- filter(dataframe, DateTime >= ymd_hms(start_time), DateTime <= ymd_hms(end_time))
   dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) +
     geom_line() +
     scale_y_reverse() + #makes depth right orientation 
-    labs(title = "Asgeir Depth Profile",
+    labs(title = title,
         x = "Time",
         y = "Depth (m)") + #changes labels on axes and title 
     theme_bw()  #white background 
+
 if(interactive == FALSE)
   dive_plot
   else ggplotly(dive_plot)
-  
-
 }
+```
 
-plot_dive(depth_data, '2018-08-24 08:26:01','2018-08-24 08:49:04', TRUE)
+```{r = plot_all_figures}
+plot_dive(depth_data, '2018-08-23 22:46:00','2018-08-30 04:25:10',"Asgeir Dive Profile 2018 Deployment")
+plot_dive(depth_data, '2018-08-24 00:00:00','2018-08-25 00:00:00', "Asgeir Dive Profile August 24, 2018")
+plot_dive(depth_data, '2018-08-24 08:26:01', '2018-08-24 08:49:04', "Asgeir Dive Profile Single Dive August 24, 2018")
+```
+
+```{r plot_day, message = FALSE, echo = FALSE}
+# start_day <- ymd_hms('2018-08-24 00:00:00')
+# end_day <- start_day + days(1)
+# one_day <- filter(depth_data, DateTime >= start_day, DateTime <= end_day) #sets time period
+# day_plot<- ggplot(one_day, aes(x = DateTime, y = Depth)) + 
+#   geom_line() +
+#   scale_y_reverse() + #makes depth right orientation 
+#   labs(title = "Asgeir 24 Hour Depth Profile 2018",
+#        x = "Time",
+#        y = "Depth (m)") + #changes labels on axes and title 
+#   theme_bw()  #white background 
+# day_plot
+# #ggplotly(day_plot) #makes plot interactive 
+# ```
 ```
 
 
