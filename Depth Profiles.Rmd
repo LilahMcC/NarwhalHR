@@ -10,8 +10,8 @@ output:
     highlights: monotone
 ---
 
-### Before Starting: load libraries
-```{r = load_packages, messages = FALSE, echo = FALSE}
+### Before Starting: Load libraries
+```{r = load_packages, message = FALSE, results = FALSE}
 library(lubridate)
 library(tidyverse)
 library(plotly)
@@ -21,11 +21,12 @@ library(glue)
 
 
 ### Task 1 and 2:  
-Read the file into a dataframe, and make DateTimes compatible with POSIXct 
-```{r = fix_datetimes, messages = FALSE}
-depth_data <- read_tsv("Depth_Asgeir.txt") %>% 
-  mutate(DateTime = mdy_hms(`Date time`), .keep = "unused")#fixes datetime
+Read the file into a dataframe, and make DateTimes compatible with POSIXct
+```{r = fix_datetimes, message = FALSE, results = FALSE}
+depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file 
+  mutate(DateTime = mdy_hms(`Date time`), .keep = "unused") #fix datetime
 ```
+
 
 ### Task 3   
 **Make Figures**  
@@ -55,7 +56,8 @@ day_plot<- ggplot(one_day, aes(x = DateTime, y = Depth)) +
        x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
   theme_bw()  #white background 
-ggplotly(day_plot) #makes plot interactive 
+day_plot
+#ggplotly(day_plot) #makes plot interactive 
 ```
 
 ```{r plot_one_dive, message = FALSE, echo = FALSE}
@@ -69,8 +71,8 @@ dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) + #filters datetime 
        x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
   theme_bw()  #white background 
-#ggplotly(dive_plot)
 dive_plot
+#ggplotly(dive_plot)
 ```
 
 
