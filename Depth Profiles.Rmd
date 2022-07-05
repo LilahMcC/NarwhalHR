@@ -44,7 +44,7 @@ depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file
 # interactive - FALSE (default) plots a regular graph, TRUE plots an interactive graph. 
 
 plot_dive <- function(dataframe, start_time, end_time, title, interactive = FALSE) {
-  one_dive <- filter(dataframe, DateTime >= ymd_hms(start_time), DateTime <= ymd_hms(end_time))
+  one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
   dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) +
     geom_line() +
     scale_y_reverse() + #makes depth right orientation 
@@ -53,16 +53,25 @@ plot_dive <- function(dataframe, start_time, end_time, title, interactive = FALS
         y = "Depth (m)") + #changes labels on axes and title 
     theme_bw()  #white background 
 
-if(interactive == FALSE)
-  dive_plot
+  if(interactive == FALSE)
+    dive_plot
   else ggplotly(dive_plot)
 }
 ```
 
-```{r = plot_all_figures}
-plot_dive(depth_data, '2018-08-23 22:46:00','2018-08-30 04:25:10',"Asgeir Dive Profile 2018 Deployment")
-plot_dive(depth_data, '2018-08-24 00:00:00','2018-08-25 00:00:00', "Asgeir Dive Profile August 24, 2018")
-plot_dive(depth_data, '2018-08-24 08:26:01', '2018-08-24 08:49:04', "Asgeir Dive Profile Single Dive August 24, 2018")
+```{r = plot_all_figures, echo = FALSE, messages = FALSE}
+# plot whole deployment 
+start_dep <- depth_data$DateTime[1]
+end_dep <- depth_data$DateTime[nrow(depth_data)]
+plot_dive(depth_data, start_dep,end_dep,"Asgeir Dive Profile 2018 Deployment")
+#plot day
+start_day <- ymd_hms('2018-08-24 00:00:00')
+end_day <- start_day + days(1)
+plot_dive(depth_data, start_day, end_day, "Asgeir Dive Profile August 24, 2018")
+#plot one dive 
+start_dive <- ymd_hms('2018-08-24 08:26:01')
+end_dive <- ymd_hms('2018-08-24 08:49:04')
+plot_dive(depth_data, start_dive, end_dive, "Asgeir Dive Profile Single Dive August 24, 2018")
 ```
 
 ```{r plot_day, message = FALSE, echo = FALSE}
