@@ -75,5 +75,26 @@ dive_plot
 #ggplotly(dive_plot)
 ```
 
+Write function: 
+```{r plot_dive_func}
+plot_dive <- function(dataframe, start_time, end_time, interactive = FALSE) {
+  one_dive <- filter(dataframe, DateTime >= ymd_hms(start_time), DateTime <= ymd_hms(end_time))
+  dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) +
+    geom_line() +
+    scale_y_reverse() + #makes depth right orientation 
+    labs(title = "Asgeir Depth Profile",
+        x = "Time",
+        y = "Depth (m)") + #changes labels on axes and title 
+    theme_bw()  #white background 
+if(interactive == FALSE)
+  dive_plot
+  else ggplotly(dive_plot)
+  
+
+}
+
+plot_dive(depth_data, '2018-08-24 08:26:01','2018-08-24 08:49:04', TRUE)
+```
+
 
 
