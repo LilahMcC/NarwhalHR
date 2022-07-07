@@ -18,11 +18,38 @@ library(lubridate)
 Step 1: read files into r: 
 ```{r read files}
 acc_i <- read_tsv("HDI0_Asgeir.txt") %>%  
-  mutate(DateTime = mdy_hms(`08/23/2018 22:31:45`), .keep = "unused") #fix datetime
-  #need another line to rename the first column, and maybe the second, but not sure what these are yet 
+  mutate(DateTime = mdy_hms(`08/23/2018 22:31:45`), .keep = "unused")   #fix datetime
+colnames(acc_i)[1] <- "Acceleration"
+head_i <- head(acc_i, 100000)
+
 acc_j <- read_tsv("HDJ0_Asgeir.txt") %>% 
   mutate(DateTime = mdy_hms(`08/23/2018 22:31:45`), .keep = "unused") #fix datetime
+colnames(acc_j)[1] <- "Acceleration"
+
 acc_k <- read_tsv("HDK0_Asgeir.txt") %>% 
   mutate(DateTime = mdy_hms(`08/23/2018 22:31:45`), .keep = "unused") #fix datetime
+colnames(acc_k)[1] <- "Acceleration"
+```
+
+```{r plot_acc_func}
+plot_acc <- function(dataframe, start_time, end_time, title) {
+  one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
+  ggplot(one_dive, aes(x = DateTime, y = Acceleration)) +
+    geom_line() +
+    labs(title = title,
+         x = "Time",
+         y = "Accleration") + #changes labels on axes and title 
+    theme_bw()  #white background
+}
+```
+
+```{r plot accleration next to dive profile}
+start_dive <- ymd_hms('2018-08-24 08:26:01')
+end_dive <- ymd_hms('2018-08-24 08:49:04')
+plot_acc(acc_i, start_dive, end_dive, "Accleration i")
+plot_acc(acc_j, start_dive, end_dive, "Accleration j")
+plot_acc(acc_k, start_dive, end_dive, "Accleration k")
+
+
 ```
 
