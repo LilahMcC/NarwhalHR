@@ -32,17 +32,23 @@ col_name_vector <- c("acceleration", "%", "DateTime")
 create_acc_df <- function(file, nrow){
   df_name <- read_tsv(file, col_names = col_name_vector, n_max = nrow) %>% 
   mutate(DateTime = mdy_hms(`DateTime`), .keep = "unused") %>%   #fix datetime
-  mutate(acceleration = acceleration/1000, .keep = "unused") # makes units milli-g
+  mutate(acceleration = acceleration/1000, .keep = "unused") %>%  # makes units milli-g
+  mutate("%" = NULL) #removes "%" column 
+
 }
   
-
 ```
 
-```{r read files}
+```{r read_files}
 acc_i <- create_acc_df("HDI0_Asgeir.txt", nrow = 100)
-acc_j <- create_acc_df("HDJ0_Asgeir.txt", nrow = 1000)
-acc_k <- create_acc_df("HDK0_Asgeir.txt", nrow = 12000)
+acc_j <- create_acc_df("HDJ0_Asgeir.txt", nrow = 100)
+acc_k <- create_acc_df("HDK0_Asgeir.txt", nrow = 100)
+```
 
+```{r combine_acceleration}
+acc_all <- inner_join(acc_i, acc_j, by = "DateTime")
+  
+  
 ```
 
 
