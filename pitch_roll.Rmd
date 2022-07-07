@@ -1,0 +1,28 @@
+---
+title: "pitch_roll"
+author: "Lilah McCormick"
+date: '2022-07-07'
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes 
+    theme: default 
+    highlights: monotone
+---
+```{r load libraries, echo = FALSE}
+library(tidyverse)
+library(lubridate)
+```
+
+#Task: Write two R functions that take acceleration as the input and return pitch and roll
+Step 1: read files into r: 
+```{r read files}
+acc_i <- read_tsv("HDI0_Asgeir.txt") %>%  
+  mutate(DateTime = mdy_hms(`08/23/2018 22:31:45`), .keep = "unused") #fix datetime
+  #need another line to rename the first column, and maybe the second, but not sure what these are yet 
+acc_j <- read_tsv("HDJ0_Asgeir.txt") %>% 
+  mutate(DateTime = mdy_hms(`08/23/2018 22:31:45`), .keep = "unused") #fix datetime
+acc_k <- read_tsv("HDK0_Asgeir.txt") %>% 
+  mutate(DateTime = mdy_hms(`08/23/2018 22:31:45`), .keep = "unused") #fix datetime
+```
+
