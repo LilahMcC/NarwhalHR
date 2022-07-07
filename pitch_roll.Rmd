@@ -29,6 +29,18 @@ colnames(acc_j)[1] <- "Acceleration"
 acc_k <- read_tsv("HDK0_Asgeir.txt") %>% 
   mutate(DateTime = mdy_hms(`08/23/2018 22:31:45`), .keep = "unused") #fix datetime
 colnames(acc_k)[1] <- "Acceleration"
+col_name_vector <- c("acceleration", "%", "DateTime")
+
+acc_i <- read_tsv("HDI0_Asgeir.txt", col_names = col_name_vector, n_max = 100000) %>% 
+  mutate(DateTime = mdy_hms(`DateTime`), .keep = "unused")   #fix datetime
+# mutate(acc_i, acceleration = acceleration/1000, .keep = "unused")
+
+acc_j <- read_tsv("HDJ0_Asgeir.txt", col_names = col_name_vector, n_max = 100000) %>% 
+  mutate(DateTime = mdy_hms(`DateTime`), .keep = "unused") #fix datetime
+
+
+acc_k <- read_tsv("HDK0_Asgeir.txt", col_names = col_name_vector, n_max = 100000) %>% 
+  mutate(DateTime = mdy_hms(`DateTime`), .keep = "unused") #fix datetime
 ```
 
 ```{r plot_acc_func}
