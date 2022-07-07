@@ -19,7 +19,8 @@ library(lubridate)
 #### Overarching Task: Write two R functions that take acceleration as the input and return pitch and roll
 
 
-##### Step 1: read files into r and tidy dataframe: 
+##### Step 1: read files into r and tidy dataframe:   
+Write a function to read files and put into a df   
 ```{r create_acc_df}
 # create_acc_df creates a dataframe with columns acceleration (in millig?) and DateTime to minimize repetitive coding. 
 
@@ -38,17 +39,27 @@ create_acc_df <- function(file, nrow){
 }
   
 ```
-
+Apply function to each txt file:  
 ```{r read_files}
-acc_i <- create_acc_df("HDI0_Asgeir.txt", nrow = 100)
-acc_j <- create_acc_df("HDJ0_Asgeir.txt", nrow = 100)
-acc_k <- create_acc_df("HDK0_Asgeir.txt", nrow = 100)
+acc_i <- create_acc_df("HDI0_Asgeir.txt", nrow = 2)
+acc_j <- create_acc_df("HDJ0_Asgeir.txt", nrow = 2)
+acc_k <- create_acc_df("HDK0_Asgeir.txt", nrow = 2)
+```
+Combine three data frames into one:  
+```{r combine_acceleration}
+###This is returning a df with character type for j and k acceleration which doesn't work when i do pivot_longer() in the next step 
+acc_all <- acc_i %>% 
+  mutate("acceleration_j" = acc_j[1], "acceleration_k" = acc_k[1]) %>% 
+  rename(acceleration_i = acceleration) %>%  #can't figure out how to rename other columns 
+  relocate("DateTime") #move DateTime column all the way left 
 ```
 
-```{r combine_acceleration}
-acc_all <- inner_join(acc_i, acc_j, by = "DateTime")
-  
-  
+pivot_longer() on the combined dataframe 
+```{r pivot_longer_df}
+acc_all %>% 
+  pivot_longer(!DateTime, 
+               names_to = "axis", 
+               values_to = "acceleration")
 ```
 
 
