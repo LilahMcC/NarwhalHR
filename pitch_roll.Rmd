@@ -150,6 +150,19 @@ plot_dive(depth_data, start_dive, end_dive, "Depth Profile")
 
 ```
 
+```{r pitch_roll}
+anorm <- function(xyz) {
+  sqrt(rowSums(xyz * xyz))
+}
+acc_wide %>% 
+  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z))) %>% 
+  filter(DateTime >= start_time, DateTime <= end_time) %>% 
+  ggplot(aes(DateTime, anorm)) +
+  geom_line() +
+  theme_bw()
+```
+
+
 ######  Based on the comparison of depth profile to the acceleration plots, I have made the following guesses about the alignment of the i,j,k axes and the surge, heave, and sway directions of the animal:    
 
 **I: Surge** - the projection of g onto the cranio-caudal axis should be negative during descent, and positive during ascent (depending on how you define your axes). It should be roughly 0 when the animal is at 0 degrees of pitch (at the surface). Based on these parameters, the acceleration i plot aligns most closely with the surge (X) axis.   
