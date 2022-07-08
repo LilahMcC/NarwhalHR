@@ -84,6 +84,77 @@ acc_long <- acc_wide %>%
                values_to = "acc")
 ```
 
+```{r anorm}
+#calculate anorm
+anorm <- function(xyz) {
+  sqrt(rowSums(xyz * xyz))
+}
+#plot anorm vs. DateTime
+start_time <- ymd_hms('2018-08-24 08:26:01')
+end_time <- ymd_hms('2018-08-24 08:57:00')
+
+acc_wide <- acc_wide %>% 
+  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)))  # a bit confused on what this does still 
+  
+# Plot not working at the moment 
+# filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
+#   ggplot(acc_wide, aes(DateTime, anorm)) +
+#   geom_line() +
+#   theme_bw()
+
+```
+
+```{r pitch}
+# p = -asin(acc_x)(anorm)
+# read_accx (this should be part of a function in the end)
+accx <- read_tsv("HDI0_Asgeir.txt", 
+                 col_names = c("acc_x", "drop", "DateTime"), 
+                 n_max = 4e6) %>% 
+  mutate(DateTime = mdy_hms(DateTime), 
+         acc_x = acc_x / 1000) %>% # makes units g
+  select(-drop) #removes "%" column 
+
+#add pitch column 
+acc_wide <- acc_wide %>% 
+  mutate(pitch = -asin(acc_x))
+#appears as if they define positive pitch as animal tilted downward (head-first). 
+
+```
+
+```{r roll }
+accy  <- read_tsv("HDJ0_Asgeir.txt", 
+                 col_names = c("acc_y", "drop", "DateTime"), 
+                 n_max = 4e6) %>% 
+  mutate(DateTime = mdy_hms(DateTime), 
+         acc_y = acc_y / 1000) %>% # makes units g
+  select(-drop) #removes "%" column 
+
+accz  <- read_tsv("HDK0_Asgeir.txt", 
+                 col_names = c("acc_z", "drop", "DateTime"), 
+                 n_max = 4e6) %>% 
+  mutate(DateTime = mdy_hms(DateTime), 
+         acc_z = acc_z / 1000) %>% # makes units g
+  select(-drop) #removes "%" column 
+
+# add roll column 
+acc_wide <- acc_wide %>% 
+  mutate(roll = atan(acc_y/acc_z))  
+  
+  #plot roll
+  filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
+  ggplot(aes(DateTime, roll)) +
+  geom_line() +
+  theme_bw()
+
+  
+```
+
+
+
+____________________________________________________________________________________
+
+
+
 
 ##### Step 2: Connect I,J,K to Surge, Sway, Heave
 ```{r plot_acc_func}
