@@ -18,25 +18,15 @@ library(lubridate)
 ### Data manipulation: 
 #### Overarching Task: Write two R functions that take acceleration as the input and return pitch and roll
 
+```{r read_acc_func}
+# can make this a more streamlined function 
 
-##### Step 1: read files into r and tidy dataframe:   
-Write a function to read files and put into a df   
-```{r create_acc_df}
-# create_acc_df creates a dataframe with columns acceleration (in millig?) and DateTime to minimize repetitive coding. 
+# read_acc creates a dataframe with columns acceleration (in g) and DateTime to minimize repetitive coding. 
 
 #Parameters: 
-# file = name of text file. eg: "name_of_file.txt"
-# nrow = number of rows to read. eg: 10000
+# x_path, y_path, z_path = name of text file for x,y,z axis acceleration. eg: "name_of_file.txt"
+# nrow = number of rows to read. eg: 10000. Default = Inf
 
-col_name_vector <- c("acceleration", "%", "DateTime")
-
-create_acc_df <- function(file, nrow){
-  df_name <- read_tsv(file, col_names = col_name_vector, n_max = nrow) %>% 
-  mutate(DateTime = mdy_hms(`DateTime`), .keep = "unused") %>%   #fix datetime
-  mutate(acceleration = acceleration/1000, .keep = "unused") %>%  # makes units milli-g
-  mutate("%" = NULL) #removes "%" column 
-
-}
 read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
   accx <- read_tsv(x_path, 
                    col_names = c("acc_x", "drop", "DateTime"), 
@@ -50,7 +40,7 @@ read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
                    n_max = nrow) %>% 
     mutate(DateTime = mdy_hms(DateTime), 
            acc_y = acc_y / 1000) %>% # makes units g
-    select(-drop) #removes "%" column 
+    select(-drop) #removes drop column 
   
   accz <- read_tsv(z_path, 
                    col_names = c("acc_z", "drop", "DateTime"), 
@@ -65,19 +55,32 @@ read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
   
   accx %>% 
     mutate(acc_y = accy$acc_y,
-           acc_z = accz$acc_z) %>% 
-    relocate(DateTime)
+           acc_z = accz$acc_z) %>%  #combine acc columns into one df with DateTime
+    relocate(DateTime) #move DateTime col to front 
 }
+
+#Read accx function - can't make this work yet. 
+read_accx <- function(x_path, nrow){
+  accx <- read_tsv(x_path, 
+                   col_names = c("acc_x", "drop", "DateTime"), 
+                   n_max = nrow) %>% 
+    mutate(DateTime = mdy_hms(DateTime), 
+           acc_x = acc_x / 1000) %>% # makes units g
+    select(-drop) #removes "%" column 
+  accx
+}
+
+accx <- read_accx(x_path = "HDI0_Asgeir.txt", nrow = 10)
 ```
-Apply function to each txt file:  
-```{r read_files}
+ 
+```{r read_into_wide }
 acc_wide <- read_acc("HDI0_Asgeir.txt", 
                      "HDJ0_Asgeir.txt", 
                      "HDK0_Asgeir.txt", 
                      nrow = 4e6)
 ```
 
-```{r pivot_longer_df}
+```{r pivot_longer=}
 acc_long <- acc_wide %>% 
   pivot_longer(!DateTime, 
                names_to = "axis", 
@@ -199,6 +202,7 @@ plot_dive <- function(dataframe, start_time, end_time, title) {
 
 
 ```{r plot accleration next to dive profile}
+#plot acceleration together 
 start_time <- ymd_hms('2018-08-24 08:26:01')
 end_time <- ymd_hms('2018-08-24 08:57:00')
 
@@ -209,10 +213,10 @@ ggplot(one_dive, aes(x = DateTime, y = acc, color = axis)) +
        y = "acceleration") + #changes labels on axes and title 
   theme_bw()  #white background
 
-#Plot acceleration
-plot_acc(acc_i, start_dive, end_dive, "accleration i")
-plot_acc(acc_j, start_dive, end_dive, "accleration j")
-plot_acc(acc_k, start_dive, end_dive, "accleration k")
+#Plot acceleration separately 
+plot_acc(acc_x, start_time, end_time, "accleration i")
+plot_acc(acc_y, start_time, end_time, "accleration j")
+plot_acc(acc_z, start_time, end_time, "accleration k")
 
 #Plot depth 
 depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file 
@@ -236,6 +240,6 @@ acc_wide %>%
 
 ######  Based on the comparison of depth profile to the acceleration plots, I have made the following guesses about the alignment of the i,j,k axes and the surge, heave, and sway directions of the animal:    
 
-**I: Surge** - the projection of g onto the cranio-caudal axis should be negative during descent, and positive during ascent (depending on how you define your axes). It should be roughly 0 when the animal is at 0 degrees of pitch (at the surface). Based on these parameters, the acceleration i plot aligns most closely with the surge (X) axis.   
-**J: Sway** - the projection of g onto the lateral axis likely does not vary consistently with a change in pitch of the animal. The j acceleration plot does not show any correlation with depth, and therefore, is measuring acceleration on the sway (Y) axis.   
-**K: Heave** - the projection of g onto the dorso-ventral axis will be most strongly negative when the animal is at a 0 degree pitch angle (it's likely behavior at the surface), and will become less negative when the animal is angled up or down. It should only be positive if the animal is upside-down. Because the k acceleration values are consistently strongly negative during the surface interval, and slightly less negative during ascent, k acceleration is likely measuring acceleration in the heave (Z) axis. It's very interesting to note that on the descent, the values are positive, possibly indicating the presence of the falling-leaf dive behavior documented in elephant seals. 
+**I(x): Surge** - the projection of g onto the cranio-caudal axis should be negative during descent, and positive during ascent (depending on how you define your axes). It should be roughly 0 when the animal is at 0 degrees of pitch (at the surface). Based on these parameters, the acceleration i plot aligns most closely with the surge (X) axis.   
+**J (y): Sway** - the projection of g onto the lateral axis likely does not vary consistently with a change in pitch of the animal. The j acceleration plot does not show any correlation with depth, and therefore, is measuring acceleration on the sway (Y) axis.   
+**K (z): Heave** - the projection of g onto the dorso-ventral axis will be most strongly negative when the animal is at a 0 degree pitch angle (it's likely behavior at the surface), and will become less negative when the animal is angled up or down. It should only be positive if the animal is upside-down. Because the k acceleration values are consistently strongly negative during the surface interval, and slightly less negative during ascent, k acceleration is likely measuring acceleration in the heave (Z) axis. It's very interesting to note that on the descent, the values are positive, possibly indicating the presence of the falling-leaf dive behavior documented in elephant seals. 
