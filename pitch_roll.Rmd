@@ -37,29 +37,51 @@ create_acc_df <- function(file, nrow){
   mutate("%" = NULL) #removes "%" column 
 
 }
+read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
+  accx <- read_tsv(x_path, 
+                   col_names = c("acc_x", "drop", "DateTime"), 
+                   n_max = nrow) %>% 
+    mutate(DateTime = mdy_hms(DateTime), 
+           acc_x = acc_x / 1000) %>% # makes units g
+    select(-drop) #removes "%" column 
   
+  accy <- read_tsv(y_path, 
+                   col_names = c("acc_y", "drop", "DateTime"), 
+                   n_max = nrow) %>% 
+    mutate(DateTime = mdy_hms(DateTime), 
+           acc_y = acc_y / 1000) %>% # makes units g
+    select(-drop) #removes "%" column 
+  
+  accz <- read_tsv(z_path, 
+                   col_names = c("acc_z", "drop", "DateTime"), 
+                   n_max = nrow) %>% 
+    mutate(DateTime = mdy_hms(DateTime), 
+           acc_z = acc_z / 1000) %>% # makes units g
+    select(-drop) #removes "%" column 
+  
+  # Assert datetimes are all the same
+  stopifnot(all(accx$DateTime == accy$DateTime),
+            all(accx$DateTime == accz$DateTime))
+  
+  accx %>% 
+    mutate(acc_y = accy$acc_y,
+           acc_z = accz$acc_z) %>% 
+    relocate(DateTime)
+}
 ```
 Apply function to each txt file:  
 ```{r read_files}
-acc_i <- create_acc_df("HDI0_Asgeir.txt", nrow = 2)
-acc_j <- create_acc_df("HDJ0_Asgeir.txt", nrow = 2)
-acc_k <- create_acc_df("HDK0_Asgeir.txt", nrow = 2)
-```
-Combine three data frames into one:  
-```{r combine_acceleration}
-###This is returning a df with character type for j and k acceleration which doesn't work when i do pivot_longer() in the next step 
-acc_all <- acc_i %>% 
-  mutate("acceleration_j" = acc_j[1], "acceleration_k" = acc_k[1]) %>% 
-  rename(acceleration_i = acceleration) %>%  #can't figure out how to rename other columns 
-  relocate("DateTime") #move DateTime column all the way left 
+acc_wide <- read_acc("HDI0_Asgeir.txt", 
+                     "HDJ0_Asgeir.txt", 
+                     "HDK0_Asgeir.txt", 
+                     nrow = 4e6)
 ```
 
-pivot_longer() on the combined dataframe 
 ```{r pivot_longer_df}
-acc_all %>% 
+acc_long <- acc_wide %>% 
   pivot_longer(!DateTime, 
                names_to = "axis", 
-               values_to = "acceleration")
+               values_to = "acc")
 ```
 
 
@@ -106,8 +128,15 @@ plot_dive <- function(dataframe, start_time, end_time, title) {
 
 
 ```{r plot accleration next to dive profile}
-start_dive <- ymd_hms('2018-08-24 08:26:01')
-end_dive <- ymd_hms('2018-08-24 08:57:00')
+start_time <- ymd_hms('2018-08-24 08:26:01')
+end_time <- ymd_hms('2018-08-24 08:57:00')
+
+one_dive <- filter(acc_long, DateTime >= start_time, DateTime <= end_time)
+ggplot(one_dive, aes(x = DateTime, y = acc, color = axis)) +
+  geom_line() +
+  labs(x = "Time",
+       y = "acceleration") + #changes labels on axes and title 
+  theme_bw()  #white background
 
 #Plot acceleration
 plot_acc(acc_i, start_dive, end_dive, "accleration i")
