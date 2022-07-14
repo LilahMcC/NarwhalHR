@@ -73,22 +73,36 @@ plot_dive <- function(dataframe, start_time, end_time) {
 }
 
 #plot_anorm
-plot_anorm <- function(dataframe, start_time, end_time)
+plot_anorm <- function(dataframe, start_time, end_time){
 filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
   ggplot(aes(DateTime, anorm)) +
   geom_line() +
   theme_bw()
+}
 
 #plot_pitch 
-plot_pitch <- function(dataframe, start_time, end_time)
+plot_pitch <- function(dataframe, start_time, end_time) {
   filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
   ggplot(aes(DateTime, pitch)) +
   geom_line() +
   theme_bw()
+}
 
 #plot_roll
-plot_roll <- function(dataframe, start_time, end_time)
+plot_roll <- function(dataframe, start_time, end_time){
   filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
   ggplot(aes(DateTime, roll)) +
   geom_line() +
   theme_bw()
+}
+
+#plot acceleration
+plot_acc <- function(dataframe, start_time, end_time) {
+filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
+ggplot(aes(x = DateTime, y = acc, color = axis)) +
+  geom_line() +
+  labs(x = "time",
+       y = "acceleration") + #changes labels on axes and title
+  theme_bw() +  #white background
+  facet_grid(rows = vars(axis))
+}

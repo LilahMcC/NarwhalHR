@@ -54,6 +54,9 @@ plot_pitch(acc_wide, start_time, end_time)
 #plot roll
 plot_roll(acc_wide, start_time, end_time)
 
+#plot acceleration 
+plot_acc(acc_long, start_time, end_time)
+#need to fix this so its just acceleration and not anorm, pitch, roll, etc. 
 ```
 
 
