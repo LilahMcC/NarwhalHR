@@ -87,15 +87,43 @@ acc_long <- acc_wide %>%
                values_to = "acc")
 ```
 
+```{r plot_dive_profile_func}
+# plot_dive_func plots a dive profile given a set of parameters to minimize repetition of code when plotting dive profiles at multiple timescales.
+
+# Parameters: 
+# dataframe - must be a dataframe. 
+# start_time/end_time - must be character strings in 'YYYY-MM-DD hh:mm:ss' format.
+
+plot_dive <- function(dataframe, start_time, end_time) {
+  one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
+  dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) +
+    geom_line() +
+    scale_y_reverse() + #makes depth right orientation 
+    labs(x = "Time",
+        y = "Depth (m)") + #changes labels on axes and title 
+    theme_bw()  #white background
+  dive_plot
+}
+```
+
+```{r plot depth}
+start_time <- ymd_hms('2018-08-24 08:26:01')
+end_time <- ymd_hms('2018-08-24 08:57:00')
+
+depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file 
+  mutate(DateTime = mdy_hms(`Date time`), .keep = "unused") #fix datetime
+
+plot_dive(depth_data, start_time, end_time)
+```
+
+
 ```{r anorm}
 #calculate anorm
 anorm <- function(xyz) {
   sqrt(rowSums(xyz * xyz))
 }
-#plot anorm vs. DateTime
-start_time <- ymd_hms('2018-08-24 08:26:01')
-end_time <- ymd_hms('2018-08-24 08:57:00')
 
+#add anorm onto acc_wide
 acc_wide <- acc_wide %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)))  # a bit confused on what this does still 
   
@@ -161,75 +189,44 @@ filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>%
 ```
 
 
-
-____________________________________________________________________________________
-
-
-
-
-##### Step 2: Connect I,J,K to Surge, Sway, Heave
 ```{r plot_acc_func}
 # plot_dive_func plots an acceleration vs. time graph given a set of parameters to minimize repetition of code when plotting acceleration  profiles at multiple timescales.
 
 # Parameters: 
 # dataframe - must be a dataframe. 
+# y_axis - column name to be used as y axis. 
 # start_time/end_time - must be character strings in 'YYYY-MM-DD hh:mm:ss' format.
 # title - must be a character string in "Graph Title" format. 
 
-plot_acc <- function(dataframe, start_time, end_time, title) {
+plot_acc <- function(dataframe, y_axis, start_time, end_time) {
   one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
-  ggplot(one_dive, aes(x = DateTime, y = Acceleration)) +
+  ggplot(one_dive, aes(x = DateTime, y = y_axis)) +
     geom_line() +
-    labs(title = title,
-         x = "Time",
+    labs(x = "time",
          y = "acceleration") + #changes labels on axes and title 
     theme_bw()  #white background
 }
 ```
 
-```{r plot_dive_profile_func}
-# plot_dive_func plots a dive profile given a set of parameters to minimize repetition of code when plotting dive profiles at multiple timescales.
-
-# Parameters: 
-# dataframe - must be a dataframe. 
-# start_time/end_time - must be character strings in 'YYYY-MM-DD hh:mm:ss' format.
-# title - must be a character string in "Graph Title" format. 
-
-plot_dive <- function(dataframe, start_time, end_time, title) {
-  one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
-  dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) +
-    geom_line() +
-    scale_y_reverse() + #makes depth right orientation 
-    labs(title = title,
-        x = "Time",
-        y = "Depth (m)") + #changes labels on axes and title 
-    theme_bw()  #white background
-  dive_plot
-}
-```
 
 
 ```{r plot accleration next to dive profile}
 #plot acceleration together 
-start_time <- ymd_hms('2018-08-24 08:26:01')
-end_time <- ymd_hms('2018-08-24 08:57:00')
-
 one_dive <- filter(acc_long, DateTime >= start_time, DateTime <= end_time)
 ggplot(one_dive, aes(x = DateTime, y = acc, color = axis)) +
   geom_line() +
-  labs(x = "Time",
+  labs(x = "time",
        y = "acceleration") + #changes labels on axes and title 
   theme_bw()  #white background
 
-#Plot acceleration separately 
-plot_acc(acc_x, start_time, end_time, "accleration i")
-plot_acc(acc_y, start_time, end_time, "accleration j")
-plot_acc(acc_z, start_time, end_time, "accleration k")
-
-#Plot depth 
-depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file 
-  mutate(DateTime = mdy_hms(`Date time`), .keep = "unused") #fix datetime
-plot_dive(depth_data, start_dive, end_dive, "Depth Profile")
+#plot acceleration separately 
+one_dive <- filter(acc_long, DateTime >= start_time, DateTime <= end_time)
+ggplot(one_dive, aes(x = DateTime, y = acc, color = axis)) +
+  geom_line() +
+  labs(x = "time",
+       y = "acceleration") + #changes labels on axes and title 
+  theme_bw() +  #white background
+  facet_grid(rows = vars(axis))
 
 ```
 
