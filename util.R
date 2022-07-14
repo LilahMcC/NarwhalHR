@@ -50,7 +50,7 @@ pitch <- function(x, anorm) {
 }
 #roll 
 #parameters: 2 columns containing the y-axis (sway) and z-axis (heave) acceleration values respectively. 
-roll <- function(y, z) {
+roll <- function(y,z) {
   roll = atan(y/z)
 }
 
@@ -72,8 +72,23 @@ plot_dive <- function(dataframe, start_time, end_time) {
   dive_plot
 }
 
+#plot_anorm
 plot_anorm <- function(dataframe, start_time, end_time)
 filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
   ggplot(aes(DateTime, anorm)) +
+  geom_line() +
+  theme_bw()
+
+#plot_pitch 
+plot_pitch <- function(dataframe, start_time, end_time)
+  filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
+  ggplot(aes(DateTime, pitch)) +
+  geom_line() +
+  theme_bw()
+
+#plot_roll
+plot_roll <- function(dataframe, start_time, end_time)
+  filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
+  ggplot(aes(DateTime, roll)) +
   geom_line() +
   theme_bw()

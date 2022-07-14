@@ -21,7 +21,7 @@ source("util.R")
 acc_wide <- read_acc("HDI0_Asgeir.txt", 
                      "HDJ0_Asgeir.txt", 
                      "HDK0_Asgeir.txt", 
-                     nrow = 1e6) %>% 
+                     nrow = 4e6) %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
          pitch = pitch(acc_x, anorm),
          roll = roll(acc_y, acc_z))
@@ -48,59 +48,14 @@ plot_dive(depth_data, start_time, end_time)
 plot_anorm(acc_wide, start_time, end_time)
 
 #plot pitch
-
-```
-
-
-```{r pitch, echo = FALSE, message = FALSE}
-# p = -asin(acc_x)(anorm)
-# read_accx (this should be part of a function in the end)
-accx <- read_tsv("HDI0_Asgeir.txt", 
-                 col_names = c("acc_x", "drop", "DateTime"), 
-                 n_max = 1e6) %>% 
-  mutate(DateTime = mdy_hms(DateTime), 
-         acc_x = acc_x / 1000) %>% # makes units g
-  select(-drop) #removes "%" column 
-
-#add pitch column 
-acc_wide <- acc_wide %>% 
-  mutate(pitch = -asin(acc_x)) 
-
-#plot pitch 
-filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
-  ggplot(aes(DateTime, pitch)) +
-  geom_line() +
-  theme_bw()
-
-#appears as if they define positive pitch as animal tilted downward (head-first). 
-```
-
-```{r roll, echo = FALSE, message = FALSE}
-accy  <- read_tsv("HDJ0_Asgeir.txt", 
-                 col_names = c("acc_y", "drop", "DateTime"), 
-                 n_max = 4e6) %>% 
-  mutate(DateTime = mdy_hms(DateTime), 
-         acc_y = acc_y / 1000) %>% # makes units g
-  select(-drop) #removes "%" column 
-
-accz  <- read_tsv("HDK0_Asgeir.txt", 
-                 col_names = c("acc_z", "drop", "DateTime"), 
-                 n_max = 4e6) %>% 
-  mutate(DateTime = mdy_hms(DateTime), 
-         acc_z = acc_z / 1000) %>% # makes units g
-  select(-drop) #removes "%" column 
-
-# add roll column 
-acc_wide <- acc_wide %>% 
-  mutate(roll = atan(acc_y/acc_z))  
+plot_pitch(acc_wide, start_time, end_time)
+#appears as if they define positive pitch as animal tilted downward (head-first)
 
 #plot roll
-filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
-  ggplot(aes(DateTime, roll)) +
-  geom_line() +
-  theme_bw()
-  
+plot_roll(acc_wide, start_time, end_time)
+
 ```
+
 
 
 ```{r plot accleration, echo = FALSE, message = FALSE}
