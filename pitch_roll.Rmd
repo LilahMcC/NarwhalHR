@@ -30,6 +30,7 @@ acc_wide <- read_acc("HDI0_Asgeir.txt",
 
 ```{r pivot_longer, echo = FALSE}
 acc_long <- acc_wide %>% 
+  subset(select = c(DateTime, acc_x, acc_y, acc_z)) %>% 
   pivot_longer(!DateTime, 
                names_to = "axis", 
                values_to = "acc")
@@ -59,18 +60,5 @@ plot_acc(acc_long, start_time, end_time)
 #need to fix this so its just acceleration and not anorm, pitch, roll, etc. 
 ```
 
-
-
-```{r plot accleration, echo = FALSE, message = FALSE}
-#plot acceleration separately 
-one_dive <- filter(acc_long, DateTime >= start_time, DateTime <= end_time)
-ggplot(one_dive, aes(x = DateTime, y = acc, color = axis)) +
-  geom_line() +
-  labs(x = "time",
-       y = "acceleration") + #changes labels on axes and title 
-  theme_bw() +  #white background
-  facet_grid(rows = vars(axis))
-
-```
 
 
