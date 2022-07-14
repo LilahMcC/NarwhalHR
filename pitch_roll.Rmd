@@ -13,71 +13,19 @@ output:
 ```{r load libraries, echo = FALSE, message = FALSE}
 library(tidyverse)
 library(lubridate)
-```
-
-### Data manipulation: 
-#### Overarching Task: Write two R functions that take acceleration as the input and return pitch and roll
-
-```{r read_acc_func,  echo = FALSE, message = FALSE}
-# can make this a more streamlined function 
-
-# read_acc creates a dataframe with columns acceleration (in g) and DateTime to minimize repetitive coding. 
-
-#Parameters: 
-# x_path, y_path, z_path = name of text file for x,y,z axis acceleration. eg: "name_of_file.txt"
-# nrow = number of rows to read. eg: 10000. Default = Inf
-
-read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
-  accx <- read_tsv(x_path, 
-                   col_names = c("acc_x", "drop", "DateTime"), 
-                   n_max = nrow) %>% 
-    mutate(DateTime = mdy_hms(DateTime), 
-           acc_x = acc_x / 1000) %>% # makes units g
-    select(-drop) #removes "%" column 
-  
-  accy <- read_tsv(y_path, 
-                   col_names = c("acc_y", "drop", "DateTime"), 
-                   n_max = nrow) %>% 
-    mutate(DateTime = mdy_hms(DateTime), 
-           acc_y = acc_y / 1000) %>% # makes units g
-    select(-drop) #removes drop column 
-  
-  accz <- read_tsv(z_path, 
-                   col_names = c("acc_z", "drop", "DateTime"), 
-                   n_max = nrow) %>% 
-    mutate(DateTime = mdy_hms(DateTime), 
-           acc_z = acc_z / 1000) %>% # makes units g
-    select(-drop) #removes "%" column 
-  
-  # Assert datetimes are all the same
-  stopifnot(all(accx$DateTime == accy$DateTime),
-            all(accx$DateTime == accz$DateTime))
-  
-  accx %>% 
-    mutate(acc_y = accy$acc_y,
-           acc_z = accz$acc_z) %>%  #combine acc columns into one df with DateTime
-    relocate(DateTime) #move DateTime col to front 
-}
-
-# #Read accx function - can't make this work yet. 
-# read_accx <- function(x_path, nrow){
-#   accx <- read_tsv(x_path, 
-#                    col_names = c("acc_x", "drop", "DateTime"), 
-#                    n_max = nrow) %>% 
-#     mutate(DateTime = mdy_hms(DateTime), 
-#            acc_x = acc_x / 1000) %>% # makes units g
-#     select(-drop) #removes "%" column 
-#   accx
-# }
-# 
-# accx <- read_accx(x_path = "HDI0_Asgeir.txt", nrow = 10)
+# Time for a utility script?
+source("util.R")
 ```
  
 ```{r read_into_wide,  echo = FALSE, message = FALSE}
 acc_wide <- read_acc("HDI0_Asgeir.txt", 
                      "HDJ0_Asgeir.txt", 
                      "HDK0_Asgeir.txt", 
-                     nrow = 4e6)
+                     nrow = 1e6) %>% 
+  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
+         pitch = pitch(acc_x),
+         roll = roll(acc_y, acc_z))
+
 ```
 
 ```{r pivot_longer, echo = FALSE}
