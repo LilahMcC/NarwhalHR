@@ -1,4 +1,4 @@
-#Reading Files Functions:
+#READING FUNCTIONS:
 
 # read_acc creates a dataframe with columns acceleration (in g) and DateTime.
 #Parameters: 
@@ -29,7 +29,13 @@ read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
     relocate(DateTime) #move DateTime col to front 
 }
 
-#Calculation Functions: 
+#parameters: path to depth file
+read_depth <- function(path){
+  depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file 
+    mutate(DateTime = mdy_hms(`Date time`), .keep = "unused")
+}
+
+#CALCULATION FUNCTIONS 
 
 #anorm calculates the norm of the matrix. 
 #Parameters: a 3 column matrix of columns of equal length. 
@@ -39,8 +45,8 @@ anorm <- function(xyz) {
 
 #pitch 
 #parameters: column containing x-axis (surge) acceleration values
-pitch <- function(x) {
-  pitch = -asin(x)
+pitch <- function(x, anorm) {
+  pitch = -asin(x)*(anorm)
 }
 #roll 
 #parameters: 2 columns containing the y-axis (sway) and z-axis (heave) acceleration values respectively. 
@@ -49,4 +55,25 @@ roll <- function(y, z) {
 }
 
 
-#Plotting Functions:
+#PLOTTING FUNCTIONS
+
+# plot_dive plots a dive profile given a set of parameters to minimize repetition of code when plotting dive profiles at multiple timescales.
+# Parameters: 
+# dataframe - must be a dataframe. 
+# start_time/end_time - must be character strings in 'YYYY-MM-DD hh:mm:ss' format.
+plot_dive <- function(dataframe, start_time, end_time) {
+  one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
+  dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) +
+    geom_line() +
+    scale_y_reverse() + #makes depth right orientation 
+    labs(x = "Time",
+         y = "Depth (m)") + #changes labels on axes and title 
+    theme_bw()  #white background
+  dive_plot
+}
+
+plot_anorm <- function(dataframe, start_time, end_time)
+filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
+  ggplot(aes(DateTime, anorm)) +
+  geom_line() +
+  theme_bw()

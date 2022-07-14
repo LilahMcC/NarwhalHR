@@ -23,7 +23,7 @@ acc_wide <- read_acc("HDI0_Asgeir.txt",
                      "HDK0_Asgeir.txt", 
                      nrow = 1e6) %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
-         pitch = pitch(acc_x),
+         pitch = pitch(acc_x, anorm),
          roll = roll(acc_y, acc_z))
 
 ```
@@ -35,63 +35,29 @@ acc_long <- acc_wide %>%
                values_to = "acc")
 ```
 
-```{r plot_dive_profile_func, echo = FALSE, message = FALSE}
-# plot_dive_func plots a dive profile given a set of parameters to minimize repetition of code when plotting dive profiles at multiple timescales.
-
-# Parameters: 
-# dataframe - must be a dataframe. 
-# start_time/end_time - must be character strings in 'YYYY-MM-DD hh:mm:ss' format.
-
-plot_dive <- function(dataframe, start_time, end_time) {
-  one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
-  dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) +
-    geom_line() +
-    scale_y_reverse() + #makes depth right orientation 
-    labs(x = "Time",
-        y = "Depth (m)") + #changes labels on axes and title 
-    theme_bw()  #white background
-  dive_plot
-}
-```
-
-```{r plot depth, echo = FALSE, message = FALSE}
+```{r plot figures}
+#define start and end times: 
 start_time <- ymd_hms('2018-08-24 08:26:01')
 end_time <- ymd_hms('2018-08-24 08:57:00')
 
-depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file 
-  mutate(DateTime = mdy_hms(`Date time`), .keep = "unused") #fix datetime
-
+#plot depth
+depth_data <- read_depth("Depth_Asgeir.txt")
 plot_dive(depth_data, start_time, end_time)
-```
 
+#plot anorm
+plot_anorm(acc_wide, start_time, end_time)
 
-```{r anorm, echo = FALSE, message = FALSE}
-#calculate anorm
-anorm <- function(xyz) {
-  sqrt(rowSums(xyz * xyz))
-}
-
-#add anorm onto acc_wide
-acc_wide <- acc_wide %>% 
-  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)))  # a bit confused on what this does still 
-  
-#plot anorm vs. DateTime
-filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
-  ggplot(aes(DateTime, anorm)) +
-  geom_line() +
-  theme_bw()
-
-##Why can I not get this plot to work as a pipe connected to the anorm mutate function
-
+#plot pitch
 
 ```
+
 
 ```{r pitch, echo = FALSE, message = FALSE}
 # p = -asin(acc_x)(anorm)
 # read_accx (this should be part of a function in the end)
 accx <- read_tsv("HDI0_Asgeir.txt", 
                  col_names = c("acc_x", "drop", "DateTime"), 
-                 n_max = 4e6) %>% 
+                 n_max = 1e6) %>% 
   mutate(DateTime = mdy_hms(DateTime), 
          acc_x = acc_x / 1000) %>% # makes units g
   select(-drop) #removes "%" column 
