@@ -9,7 +9,7 @@ output:
     theme: default 
     highlights: monotone
 ---
-### Load libraries: 
+load libraries: 
 ```{r load libraries, echo = FALSE, message = FALSE}
 library(tidyverse)
 library(lubridate)
@@ -28,7 +28,7 @@ acc_wide <- read_acc("HDI0_Asgeir.txt",
 
 ```
 
-```{r pivot_longer, echo = FALSE}
+```{r pivot_longer, echo = FALSE, message = FALSE}
 acc_long <- acc_wide %>% 
   subset(select = c(DateTime, acc_x, acc_y, acc_z)) %>% 
   pivot_longer(!DateTime, 
@@ -36,7 +36,8 @@ acc_long <- acc_wide %>%
                values_to = "acc")
 ```
 
-```{r plot figures}
+plot figures: 
+```{r plot figures, echo = FALSE, message = FALSE}
 #define start and end times: 
 start_time <- ymd_hms('2018-08-24 08:26:01')
 end_time <- ymd_hms('2018-08-24 08:57:00')
@@ -46,14 +47,14 @@ depth_data <- read_depth("Depth_Asgeir.txt")
 plot_dive(depth_data, start_time, end_time)
 
 #plot anorm
-plot_anorm(acc_wide, start_time, end_time)
+plot_calculated(acc_wide, start_time, end_time, anorm)
 
 #plot pitch
-plot_pitch(acc_wide, start_time, end_time)
+plot_calculated(acc_wide, start_time, end_time, pitch)
 #appears as if they define positive pitch as animal tilted downward (head-first)
 
 #plot roll
-plot_roll(acc_wide, start_time, end_time)
+plot_calculated(acc_wide, start_time, end_time, roll)
 
 #plot acceleration 
 plot_acc(acc_long, start_time, end_time)

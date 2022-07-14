@@ -72,28 +72,18 @@ plot_dive <- function(dataframe, start_time, end_time) {
   dive_plot
 }
 
-#plot_anorm
-plot_anorm <- function(dataframe, start_time, end_time){
-filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
-  ggplot(aes(DateTime, anorm)) +
-  geom_line() +
-  theme_bw()
-}
+#plot_calculated
+#plots anorm, roll, or pitch. 
+#parameters:
+#dataframe 
+#start_time and end_time in YYYY-MM-DD hh:mm:ss format 
+#col_name is a column name to be assigned to the y axis of the figure
 
-#plot_pitch 
-plot_pitch <- function(dataframe, start_time, end_time) {
+plot_calculated <- function(dataframe, start_time, end_time, col_name) {
   filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
-  ggplot(aes(DateTime, pitch)) +
-  geom_line() +
-  theme_bw()
-}
-
-#plot_roll
-plot_roll <- function(dataframe, start_time, end_time){
-  filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
-  ggplot(aes(DateTime, roll)) +
-  geom_line() +
-  theme_bw()
+    ggplot(aes(DateTime, y = {{col_name}})) +
+    geom_line() +
+    theme_bw()
 }
 
 #plot acceleration
