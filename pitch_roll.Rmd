@@ -10,7 +10,7 @@ output:
     highlights: monotone
 ---
 ### Load libraries: 
-```{r load libraries, echo = FALSE}
+```{r load libraries, echo = FALSE, message = FALSE}
 library(tidyverse)
 library(lubridate)
 ```
@@ -18,7 +18,7 @@ library(lubridate)
 ### Data manipulation: 
 #### Overarching Task: Write two R functions that take acceleration as the input and return pitch and roll
 
-```{r read_acc_func}
+```{r read_acc_func,  echo = FALSE, message = FALSE}
 # can make this a more streamlined function 
 
 # read_acc creates a dataframe with columns acceleration (in g) and DateTime to minimize repetitive coding. 
@@ -73,21 +73,21 @@ read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
 # accx <- read_accx(x_path = "HDI0_Asgeir.txt", nrow = 10)
 ```
  
-```{r read_into_wide }
+```{r read_into_wide,  echo = FALSE, message = FALSE}
 acc_wide <- read_acc("HDI0_Asgeir.txt", 
                      "HDJ0_Asgeir.txt", 
                      "HDK0_Asgeir.txt", 
                      nrow = 4e6)
 ```
 
-```{r pivot_longer=}
+```{r pivot_longer, echo = FALSE}
 acc_long <- acc_wide %>% 
   pivot_longer(!DateTime, 
                names_to = "axis", 
                values_to = "acc")
 ```
 
-```{r plot_dive_profile_func}
+```{r plot_dive_profile_func, echo = FALSE, message = FALSE}
 # plot_dive_func plots a dive profile given a set of parameters to minimize repetition of code when plotting dive profiles at multiple timescales.
 
 # Parameters: 
@@ -106,7 +106,7 @@ plot_dive <- function(dataframe, start_time, end_time) {
 }
 ```
 
-```{r plot depth}
+```{r plot depth, echo = FALSE, message = FALSE}
 start_time <- ymd_hms('2018-08-24 08:26:01')
 end_time <- ymd_hms('2018-08-24 08:57:00')
 
@@ -117,7 +117,7 @@ plot_dive(depth_data, start_time, end_time)
 ```
 
 
-```{r anorm}
+```{r anorm, echo = FALSE, message = FALSE}
 #calculate anorm
 anorm <- function(xyz) {
   sqrt(rowSums(xyz * xyz))
@@ -138,7 +138,7 @@ filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>%
 
 ```
 
-```{r pitch}
+```{r pitch, echo = FALSE, message = FALSE}
 # p = -asin(acc_x)(anorm)
 # read_accx (this should be part of a function in the end)
 accx <- read_tsv("HDI0_Asgeir.txt", 
@@ -161,7 +161,7 @@ filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>%
 #appears as if they define positive pitch as animal tilted downward (head-first). 
 ```
 
-```{r roll }
+```{r roll, echo = FALSE, message = FALSE}
 accy  <- read_tsv("HDJ0_Asgeir.txt", 
                  col_names = c("acc_y", "drop", "DateTime"), 
                  n_max = 4e6) %>% 
@@ -189,36 +189,7 @@ filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>%
 ```
 
 
-```{r plot_acc_func}
-# plot_dive_func plots an acceleration vs. time graph given a set of parameters to minimize repetition of code when plotting acceleration  profiles at multiple timescales.
-
-# Parameters: 
-# dataframe - must be a dataframe. 
-# y_axis - column name to be used as y axis. 
-# start_time/end_time - must be character strings in 'YYYY-MM-DD hh:mm:ss' format.
-# title - must be a character string in "Graph Title" format. 
-
-plot_acc <- function(dataframe, y_axis, start_time, end_time) {
-  one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
-  ggplot(one_dive, aes(x = DateTime, y = y_axis)) +
-    geom_line() +
-    labs(x = "time",
-         y = "acceleration") + #changes labels on axes and title 
-    theme_bw()  #white background
-}
-```
-
-
-
-```{r plot accleration next to dive profile}
-#plot acceleration together 
-one_dive <- filter(acc_long, DateTime >= start_time, DateTime <= end_time)
-ggplot(one_dive, aes(x = DateTime, y = acc, color = axis)) +
-  geom_line() +
-  labs(x = "time",
-       y = "acceleration") + #changes labels on axes and title 
-  theme_bw()  #white background
-
+```{r plot accleration, echo = FALSE, message = FALSE}
 #plot acceleration separately 
 one_dive <- filter(acc_long, DateTime >= start_time, DateTime <= end_time)
 ggplot(one_dive, aes(x = DateTime, y = acc, color = axis)) +
