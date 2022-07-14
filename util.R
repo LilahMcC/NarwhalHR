@@ -29,6 +29,7 @@ read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
     relocate(DateTime) #move DateTime col to front 
 }
 
+#read_depth processes the .txt depth file into a dataframe
 #parameters: path to depth file
 read_depth <- function(path){
   depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file 
@@ -87,6 +88,10 @@ plot_calculated <- function(dataframe, start_time, end_time, col_name) {
 }
 
 #plot acceleration
+#parameters:
+#dataframe 
+#start_time and end_time in YYYY-MM-DD hh:mm:ss format 
+#designed to plot each axis of triaxial acceleration data in a separate panel 
 plot_acc <- function(dataframe, start_time, end_time) {
 filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
 ggplot(aes(x = DateTime, y = acc, color = axis)) +
