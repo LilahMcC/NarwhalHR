@@ -59,18 +59,18 @@ read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
     relocate(DateTime) #move DateTime col to front 
 }
 
-#Read accx function - can't make this work yet. 
-read_accx <- function(x_path, nrow){
-  accx <- read_tsv(x_path, 
-                   col_names = c("acc_x", "drop", "DateTime"), 
-                   n_max = nrow) %>% 
-    mutate(DateTime = mdy_hms(DateTime), 
-           acc_x = acc_x / 1000) %>% # makes units g
-    select(-drop) #removes "%" column 
-  accx
-}
-
-accx <- read_accx(x_path = "HDI0_Asgeir.txt", nrow = 10)
+# #Read accx function - can't make this work yet. 
+# read_accx <- function(x_path, nrow){
+#   accx <- read_tsv(x_path, 
+#                    col_names = c("acc_x", "drop", "DateTime"), 
+#                    n_max = nrow) %>% 
+#     mutate(DateTime = mdy_hms(DateTime), 
+#            acc_x = acc_x / 1000) %>% # makes units g
+#     select(-drop) #removes "%" column 
+#   accx
+# }
+# 
+# accx <- read_accx(x_path = "HDI0_Asgeir.txt", nrow = 10)
 ```
  
 ```{r read_into_wide }
@@ -99,11 +99,14 @@ end_time <- ymd_hms('2018-08-24 08:57:00')
 acc_wide <- acc_wide %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)))  # a bit confused on what this does still 
   
-# Plot not working at the moment 
-# filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
-#   ggplot(acc_wide, aes(DateTime, anorm)) +
-#   geom_line() +
-#   theme_bw()
+#plot anorm vs. DateTime
+filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
+  ggplot(aes(DateTime, anorm)) +
+  geom_line() +
+  theme_bw()
+
+##Why can I not get this plot to work as a pipe connected to the anorm mutate function
+
 
 ```
 
@@ -119,9 +122,15 @@ accx <- read_tsv("HDI0_Asgeir.txt",
 
 #add pitch column 
 acc_wide <- acc_wide %>% 
-  mutate(pitch = -asin(acc_x))
-#appears as if they define positive pitch as animal tilted downward (head-first). 
+  mutate(pitch = -asin(acc_x)) 
 
+#plot pitch 
+filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
+  ggplot(aes(DateTime, pitch)) +
+  geom_line() +
+  theme_bw()
+
+#appears as if they define positive pitch as animal tilted downward (head-first). 
 ```
 
 ```{r roll }
@@ -142,13 +151,12 @@ accz  <- read_tsv("HDK0_Asgeir.txt",
 # add roll column 
 acc_wide <- acc_wide %>% 
   mutate(roll = atan(acc_y/acc_z))  
-  
-  #plot roll
-  filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
+
+#plot roll
+filter(acc_wide, DateTime >= start_time, DateTime <= end_time) %>% 
   ggplot(aes(DateTime, roll)) +
   geom_line() +
   theme_bw()
-
   
 ```
 
@@ -225,21 +233,4 @@ plot_dive(depth_data, start_dive, end_dive, "Depth Profile")
 
 ```
 
-```{r pitch_roll}
-anorm <- function(xyz) {
-  sqrt(rowSums(xyz * xyz))
-}
-acc_wide %>% 
-  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z))) %>% 
-  filter(DateTime >= start_time, DateTime <= end_time) %>% 
-  ggplot(aes(DateTime, anorm)) +
-  geom_line() +
-  theme_bw()
-```
 
-
-######  Based on the comparison of depth profile to the acceleration plots, I have made the following guesses about the alignment of the i,j,k axes and the surge, heave, and sway directions of the animal:    
-
-**I(x): Surge** - the projection of g onto the cranio-caudal axis should be negative during descent, and positive during ascent (depending on how you define your axes). It should be roughly 0 when the animal is at 0 degrees of pitch (at the surface). Based on these parameters, the acceleration i plot aligns most closely with the surge (X) axis.   
-**J (y): Sway** - the projection of g onto the lateral axis likely does not vary consistently with a change in pitch of the animal. The j acceleration plot does not show any correlation with depth, and therefore, is measuring acceleration on the sway (Y) axis.   
-**K (z): Heave** - the projection of g onto the dorso-ventral axis will be most strongly negative when the animal is at a 0 degree pitch angle (it's likely behavior at the surface), and will become less negative when the animal is angled up or down. It should only be positive if the animal is upside-down. Because the k acceleration values are consistently strongly negative during the surface interval, and slightly less negative during ascent, k acceleration is likely measuring acceleration in the heave (Z) axis. It's very interesting to note that on the descent, the values are positive, possibly indicating the presence of the falling-leaf dive behavior documented in elephant seals. 
