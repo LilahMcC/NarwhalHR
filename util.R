@@ -47,7 +47,7 @@ anorm <- function(xyz) {
 #pitch 
 #parameters: column containing x-axis (surge) acceleration values
 pitch <- function(x, anorm) {
-  pitch = -asin(x)*(anorm)
+  pitch = -asin(x/anorm)
 }
 #roll 
 #parameters: 2 columns containing the y-axis (sway) and z-axis (heave) acceleration values respectively. 
