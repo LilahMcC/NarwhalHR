@@ -1,4 +1,5 @@
-#READING FUNCTIONS:
+
+# Reading Functions -------------------------------------------------------
 
 # read_acc creates a dataframe with columns acceleration (in g) and DateTime.
 #Parameters: 
@@ -36,27 +37,30 @@ read_depth <- function(path){
     mutate(DateTime = mdy_hms(`Date time`), .keep = "unused")
 }
 
-#CALCULATION FUNCTIONS 
 
-#anorm calculates the norm of the matrix. 
+# Calculation Functions ---------------------------------------------------
+
+#calculate the norm of the matrix. 
 #Parameters: a 3 column matrix of columns of equal length. 
 anorm <- function(xyz) {
   sqrt(rowSums(xyz * xyz))
 }
 
-#pitch 
+#calculate the pitch of the animal
 #parameters: column containing x-axis (surge) acceleration values
 pitch <- function(x, anorm) {
-  pitch = -asin(x/anorm)
+  pitch = asin(x/anorm)
 }
-#roll 
+
+#calculate the roll of the animal
 #parameters: 2 columns containing the y-axis (sway) and z-axis (heave) acceleration values respectively. 
 roll <- function(y,z) {
   roll = atan(y/z)
 }
 
 
-#PLOTTING FUNCTIONS
+# Plotting Functions ------------------------------------------------------
+
 
 # plot_dive plots a dive profile given a set of parameters to minimize repetition of code when plotting dive profiles at multiple timescales.
 # Parameters: 
@@ -73,8 +77,7 @@ plot_dive <- function(dataframe, start_time, end_time) {
   dive_plot
 }
 
-#plot_calculated
-#plots anorm, roll, or pitch. 
+#plot_calculated plots anorm, roll, or pitch. 
 #parameters:
 #dataframe 
 #start_time and end_time in YYYY-MM-DD hh:mm:ss format 
