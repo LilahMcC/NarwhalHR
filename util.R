@@ -8,9 +8,9 @@
 
 read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
   read_acc_axis <- function(axis_path, nrow, axis_name){
-    accx <- read_tsv(axis_path,
-                     col_names = c(axis_name, "drop", "DateTime"),
-                     n_max = nrow) %>%
+    read_tsv(axis_path,
+             col_names = c(axis_name, "drop", "DateTime"),
+             n_max = nrow) %>%
       mutate(DateTime = mdy_hms(DateTime),
              {{ axis_name }} := .data[[axis_name]] / 1000) %>% # makes units g
       select(-drop) #removes "%" column
