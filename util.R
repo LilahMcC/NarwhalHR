@@ -33,7 +33,7 @@ read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
 #read_depth processes the .txt depth file into a dataframe
 #parameters: path to depth file
 read_depth <- function(path){
-  depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file 
+  depth_data <- read_tsv(path) %>% #read file 
     mutate(DateTime = mdy_hms(`Date time`), .keep = "unused")
 }
 
