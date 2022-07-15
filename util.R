@@ -49,13 +49,13 @@ anorm <- function(xyz) {
 #calculate the pitch of the animal
 #parameters: column containing x-axis (surge) acceleration values
 pitch <- function(x, anorm) {
-  pitch = asin(x/anorm)
+  asin(x/anorm)
 }
 
 #calculate the roll of the animal
 #parameters: 2 columns containing the y-axis (sway) and z-axis (heave) acceleration values respectively. 
 roll <- function(y,z) {
-  roll = atan(y/z)
+  atan(y/z)
 }
 
 
