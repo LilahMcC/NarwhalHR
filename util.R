@@ -96,11 +96,11 @@ plot_calculated <- function(dataframe, start_time, end_time, col_name) {
 #start_time and end_time in YYYY-MM-DD hh:mm:ss format 
 #designed to plot each axis of triaxial acceleration data in a separate panel 
 plot_acc <- function(dataframe, start_time, end_time) {
-filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
-ggplot(aes(x = DateTime, y = acc, color = axis)) +
-  geom_line() +
-  labs(x = "time",
-       y = "acceleration") + #changes labels on axes and title
-  theme_bw() +  #white background
-  facet_grid(rows = vars(axis))
+  filter(dataframe, DateTime >= start_time, DateTime <= end_time) %>% 
+    ggplot(aes(x = DateTime, y = acc, color = axis)) +
+    geom_line() +
+    labs(x = "time",
+         y = "acceleration") + #changes labels on axes and title
+    theme_bw() +  #white background
+    facet_grid(rows = vars(axis))
 }
