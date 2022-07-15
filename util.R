@@ -55,7 +55,7 @@ pitch <- function(x, anorm) {
 #calculate the roll of the animal
 #parameters: 2 columns containing the y-axis (sway) and z-axis (heave) acceleration values respectively. 
 roll <- function(y,z) {
-  atan(y/z)
+  atan2(y,z)
 }
 
 
