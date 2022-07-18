@@ -1,0 +1,31 @@
+---
+title: "10hz_pitch_roll"
+author: "Lilah McCormick"
+date: '2022-07-18'
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes 
+    theme: default 
+    highlights: monotone
+---
+Goal: Make a single dataframe with columns: DateTime, depth, pitch, roll at 10Hz frequency (10 rows per second)  
+Steps:   
+1. Downsample acceleration from 100 to 10 Hz  
+1. Upsample depth from 1 to 10 Hz  
+1. Calculate pitch and roll from acceleration values. 
+
+Downsample acceleration:   
+- Pipe acceleration  
+- Use slice function (take every 10th point)   
+- Pipe to mutate and call approx()  
+
+
+Upsample depth:  
+- Use approx ()  
+- Parameters: x = DateTime (vector), y = depth (vector), xout = DateTime values that you want depth values for   (vector), $y.    
+
+Calculate pitch and roll and mutate into dataframe   
+- See existing .Rmd files.  
+
+
