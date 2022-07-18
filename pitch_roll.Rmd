@@ -13,7 +13,6 @@ load libraries:
 ```{r load libraries, echo = FALSE, message = FALSE}
 library(tidyverse)
 library(lubridate)
-# Time for a utility script?
 source("util.R")
 ```
  
@@ -58,7 +57,6 @@ plot_calculated(acc_wide, start_time, end_time, roll)
 
 #plot acceleration 
 plot_acc(acc_long, start_time, end_time)
-#need to fix this so its just acceleration and not anorm, pitch, roll, etc. 
 ```
 
 

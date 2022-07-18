@@ -71,24 +71,7 @@ plot_dive(depth_data, start_day, end_day, "Asgeir Dive Profile August 24, 2018")
 #plot one dive 
 start_dive <- ymd_hms('2018-08-24 08:26:01')
 end_dive <- ymd_hms('2018-08-24 08:49:04')
-plot_dive(depth_data, start_dive, end_dive, "Asgeir Dive Profile Single Dive August 24, 2018")
+plot_dive(depth_data, start_dive, end_dive, "Asgeir Dive Profile Single Dive August 24, 2018", TRUE)
 ```
-
-```{r plot_day, message = FALSE, echo = FALSE}
-# start_day <- ymd_hms('2018-08-24 00:00:00')
-# end_day <- start_day + days(1)
-# one_day <- filter(depth_data, DateTime >= start_day, DateTime <= end_day) #sets time period
-# day_plot<- ggplot(one_day, aes(x = DateTime, y = Depth)) + 
-#   geom_line() +
-#   scale_y_reverse() + #makes depth right orientation 
-#   labs(title = "Asgeir 24 Hour Depth Profile 2018",
-#        x = "Time",
-#        y = "Depth (m)") + #changes labels on axes and title 
-#   theme_bw()  #white background 
-# day_plot
-# #ggplotly(day_plot) #makes plot interactive 
-# ```
-```
-
 
 

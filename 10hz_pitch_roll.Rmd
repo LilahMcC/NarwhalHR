@@ -9,32 +9,18 @@ output:
     theme: default 
     highlights: monotone
 ---
+To do: 
+Figure out why pipes aren't working and make them work 
+Make code cleaner 
+
+
 load libraries: 
 ```{r load libraries, echo = FALSE, message = FALSE}
 library(tidyverse)
 library(lubridate)
-# Time for a utility script?
 source("util.R")
 ```
-
-Goal: Make a single dataframe with columns: DateTime, depth, pitch, roll at 10Hz frequency (10 rows per second)  
-Steps:   
-1. Downsample pitch/roll from 100 to 10 Hz  
-1. Upsample depth from 1 to 10 Hz  
-1. Calculate pitch and roll from acceleration values. 
-
-Downsample pitch and roll:   
-- Pipe acceleration  
-- Use slice function (take every 10th point)   
-- Pipe to mutate and call approx()  
-
-Upsample depth:  
-- Use approx ()  
-- Parameters: x = DateTime (vector), y = depth (vector), xout = DateTime values that you want depth values for   (vector), $y.    
-
-Calculate pitch and roll and mutate into dataframe   
-- See existing .Rmd files.  
-
+  
 ```{r read_into_wide,  echo = FALSE, message = FALSE}
 acc_wide <- read_acc("HDI0_Asgeir.txt", 
                      "HDJ0_Asgeir.txt", 
@@ -55,14 +41,14 @@ numrows <- nrow(ten_hz)
 depth <- read_depth("Depth_Asgeir.txt")          
 depth <- mutate(depth, row_num = seq.int(nrow(depth))) # add a column for row number because datetime isn't working for me 
 ten_hz_depth <- approx(depth$row_num, depth$Depth, xout = seq(from = 1, to = nrow(depth), .1), method = "linear")$y #create a vector with depth data at 10 Hz
-ten_hz_depth <- head(ten_hz_depth, n = numrows)
+ten_hz_depth <- head(ten_hz_depth, n = numrows) #take only the number of data points that we have for acceleration 
 
 ```
 
 
 ```{r combine depth and acceleration}
-ten_hz %>% 
-  mutate(depth = ten_hz_depth)
+ten_hz <- mutate(ten_hz, depth = ten_hz_depth) #combine all of them into a dataframe 
+
 ```
 
 
