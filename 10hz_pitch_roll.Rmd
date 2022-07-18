@@ -9,17 +9,24 @@ output:
     theme: default 
     highlights: monotone
 ---
+load libraries: 
+```{r load libraries, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(lubridate)
+# Time for a utility script?
+source("util.R")
+```
+
 Goal: Make a single dataframe with columns: DateTime, depth, pitch, roll at 10Hz frequency (10 rows per second)  
 Steps:   
-1. Downsample acceleration from 100 to 10 Hz  
+1. Downsample pitch/roll from 100 to 10 Hz  
 1. Upsample depth from 1 to 10 Hz  
 1. Calculate pitch and roll from acceleration values. 
 
-Downsample acceleration:   
+Downsample pitch and roll:   
 - Pipe acceleration  
 - Use slice function (take every 10th point)   
 - Pipe to mutate and call approx()  
-
 
 Upsample depth:  
 - Use approx ()  
@@ -27,5 +34,30 @@ Upsample depth:
 
 Calculate pitch and roll and mutate into dataframe   
 - See existing .Rmd files.  
+
+```{r read_into_wide,  echo = FALSE, message = FALSE}
+acc_wide <- read_acc("HDI0_Asgeir.txt", 
+                     "HDJ0_Asgeir.txt", 
+                     "HDK0_Asgeir.txt", 
+                     nrow = 200) %>% 
+  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
+         pitch = pitch(acc_x, anorm),
+         roll = roll(acc_y, acc_z))
+```
+
+```{r downsample acc to 10 Hz }
+ten_hz <- acc_wide %>% 
+  slice(seq(1, nrow(acc_wide), 10)) #extracts every 10th row 
+```
+
+```{r upsample depth to 10 Hz}
+ten_hz_depth <- read_depth("Depth_Asgeir.txt")
+```
+
+
+```{r upsample depth to 10 Hz}
+approx(ten_hz_depth$DateTime, ten_hz_depth$Depth, xout = x)$y
+```
+
 
 
