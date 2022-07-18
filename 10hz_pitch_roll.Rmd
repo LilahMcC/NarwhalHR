@@ -51,14 +51,13 @@ ten_hz <- acc_wide %>%
 ```
 
 ```{r upsample depth to 10 Hz}
-ten_hz_depth <- read_depth("Depth_Asgeir.txt")
-ten_hz_first <- head(ten_hz_depth, n = 10) %>% 
-  mutate(row_num = c(1:10))
+depth <- read_depth("Depth_Asgeir.txt") %>% 
+  mutate(row_num = c(1:nrow(ten_hz_depth))) 
 ```
 
 
 ```{r upsample depth to 10 Hz}
-approx(ten_hz_first$row_num, ten_hz_first$Depth, xout = seq(from = 1, to = 10, .5), method = "linear")$y
+ten_hz_depth <- approx(depth$row_num, depth$Depth, xout = seq(from = 1, to = nrow(ten_hz_depth), .1), method = "linear")$y
 ```
 
 
