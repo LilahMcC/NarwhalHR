@@ -1,0 +1,56 @@
+---
+title: "tsviewer_narwhal"
+author: "Lilah McCormick"
+date: '2022-07-19'
+output: html_document
+---
+```{r}
+#install.packages("devtools")
+devtools::install_github("FlukeAndFeather/tsviewer", ref = "narwhal")
+```
+
+
+```{r}
+library(tsviewer)
+library(tidyverse)
+library(lubridate)
+source("util.R")
+```
+
+  
+```{r read_into_wide,  echo = FALSE, message = FALSE}
+acc_wide <- read_acc("HDI0_Asgeir.txt", 
+                     "HDJ0_Asgeir.txt", 
+                     "HDK0_Asgeir.txt", 
+                     nrow = Inf) %>% 
+  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
+         pitch = pitch(acc_x, anorm),
+         roll = roll(acc_y, acc_z))
+```
+
+```{r downsample acc to 10 Hz }
+ten_hz <- acc_wide %>% 
+  slice(seq(1, nrow(acc_wide), 10)) #extracts every 10th row 
+numrows <- nrow(ten_hz)
+```
+
+```{r upsample depth to 10 Hz}
+depth <- read_depth("Depth_Asgeir.txt")          
+depth <- mutate(depth, row_num = seq.int(nrow(depth))) # add a column for row number because datetime isn't working for me 
+ten_hz_depth <- approx(depth$row_num, depth$Depth, xout = seq(from = 1, to = nrow(depth), .1), method = "linear")$y #create a vector with depth data at 10 Hz
+ten_hz_depth <- head(ten_hz_depth, n = numrows) #take only the number of data points that we have for acceleration 
+
+```
+
+
+```{r combine depth and acceleration}
+ten_hz <- mutate(ten_hz, depth = ten_hz_depth) #combine all of them into a dataframe
+narwhal_10hz <- ten_hz
+```
+
+
+```{r}
+# Launch the tool
+run_tsviewer(narwhal_10hz)
+```
+
