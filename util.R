@@ -37,7 +37,6 @@ read_depth <- function(path){
     mutate(DateTime = mdy_hms(`Date time`), .keep = "unused")
 }
 
-
 # Calculation Functions ---------------------------------------------------
 
 #calculate the norm of the matrix. 
