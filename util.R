@@ -9,9 +9,9 @@
 read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
   read_acc_axis <- function(axis_path, nrow, axis_name){
     read_tsv(axis_path,
-             col_names = c(axis_name, "drop", "DateTime"),
+             col_names = c(axis_name, "drop", "Datetime"), ###
              n_max = nrow) %>%
-      mutate(DateTime = mdy_hms(DateTime),
+      mutate(Datetime = mdy_hms(Datetime),###
              {{ axis_name }} := .data[[axis_name]] / 1000) %>% # makes units g
       select(-drop) #removes "%" column
   }
@@ -21,13 +21,13 @@ read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
   accz <- read_acc_axis(z_path, nrow, "acc_z")
   
   # Assert datetimes are all the same
-  stopifnot(all(accx$DateTime == accy$DateTime),
-            all(accx$DateTime == accz$DateTime))
+  stopifnot(all(accx$Datetime == accy$Datetime),###
+            all(accx$Datetime == accz$Datetime))###
   
   accx %>% 
     mutate(acc_y = accy$acc_y,
            acc_z = accz$acc_z) %>%  #combine acc columns into one df with DateTime
-    relocate(DateTime) #move DateTime col to front 
+    relocate(Datetime) #move DateTime col to front ###
 }
 
 #read_depth processes the .txt depth file into a dataframe

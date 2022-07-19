@@ -4,6 +4,7 @@ author: "Lilah McCormick"
 date: '2022-07-19'
 output: html_document
 ---
+###### Edited "DateTime" col name to "Datetime" in util.R - go back and change all of those so it's consistent with the other code. 
 ```{r}
 #install.packages("devtools")
 devtools::install_github("FlukeAndFeather/tsviewer", ref = "narwhal")
