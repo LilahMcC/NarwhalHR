@@ -15,11 +15,12 @@ Make code cleaner
 
 
 load libraries: 
-```{r load libraries, echo = FALSE, message = FALSE}
+```{r load, echo = FALSE, message = FALSE}
 library(tidyverse)
 library(lubridate)
 source("util.R")
 ```
+
   
 ```{r read_into_wide,  echo = FALSE, message = FALSE}
 acc_wide <- read_acc("HDI0_Asgeir.txt", 
@@ -31,25 +32,15 @@ acc_wide <- read_acc("HDI0_Asgeir.txt",
          roll = roll(acc_y, acc_z))
 ```
 
-```{r downsample acc to 10 Hz }
+```{r combine_acc_depth}
+depth_df <- read_depth("Depth_Asgeir.txt")          
 ten_hz <- acc_wide %>% 
-  slice(seq(1, nrow(acc_wide), 10)) #extracts every 10th row 
-numrows <- nrow(ten_hz)
+  slice(seq(1, nrow(acc_wide), 10)) %>%  #extracts every 10th row 
+  mutate(depth = approx(depth_df$DateTime, depth_df$Depth, xout = DateTime)$y)
 ```
 
-```{r upsample depth to 10 Hz}
-depth <- read_depth("Depth_Asgeir.txt")          
-depth <- mutate(depth, row_num = seq.int(nrow(depth))) # add a column for row number because datetime isn't working for me 
-ten_hz_depth <- approx(depth$row_num, depth$Depth, xout = seq(from = 1, to = nrow(depth), .1), method = "linear")$y #create a vector with depth data at 10 Hz
-ten_hz_depth <- head(ten_hz_depth, n = numrows) #take only the number of data points that we have for acceleration 
-
+```{r save}
+saveRDS(ten_hz, "Asgeir_10hz.rds")
 ```
-
-
-```{r combine depth and acceleration}
-ten_hz <- mutate(ten_hz, depth = ten_hz_depth) #combine all of them into a dataframe 
-
-```
-
 
 
