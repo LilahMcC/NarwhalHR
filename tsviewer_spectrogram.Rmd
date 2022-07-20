@@ -1,0 +1,19 @@
+---
+title: "tsviewer_spectrogram"
+author: "Lilah McCormick"
+date: '2022-07-20'
+output: html_document
+---
+```{r load}
+library(tidyverse)
+source("util.R")
+```
+
+```{r}
+asgeir_10hz_pitch <- readRDS("Asgeir_10hz.rds") %>%
+  transmute(t = DateTime, 
+            pitch = pitch) #Create df with just t and pitch 
+
+spec <- spec.pgram(asgeir_10hz_pitch)
+```
+
