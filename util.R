@@ -7,11 +7,14 @@
 # nrow = number of rows to read. eg: 10000. Default = Inf
 
 read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
+  add_sec_frac <- function(time, freq_hz) {
+    time + (seq(0, length(time) - 1) %% freq_hz) / freq_hz 
+  }
   read_acc_axis <- function(axis_path, nrow, axis_name){
     read_tsv(axis_path,
-             col_names = c(axis_name, "drop", "Datetime"), ###
+             col_names = c(axis_name, "drop", "DateTime"), 
              n_max = nrow) %>%
-      mutate(Datetime = mdy_hms(Datetime),###
+      mutate(DateTime = add_sec_frac(mdy_hms(DateTime), 100),# 100 Hz
              {{ axis_name }} := .data[[axis_name]] / 1000) %>% # makes units g
       select(-drop) #removes "%" column
   }
@@ -21,13 +24,13 @@ read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
   accz <- read_acc_axis(z_path, nrow, "acc_z")
   
   # Assert datetimes are all the same
-  stopifnot(all(accx$Datetime == accy$Datetime),###
-            all(accx$Datetime == accz$Datetime))###
+  stopifnot(all(accx$DateTime == accy$DateTime),
+            all(accx$DateTime == accz$DateTime))
   
   accx %>% 
     mutate(acc_y = accy$acc_y,
            acc_z = accz$acc_z) %>%  #combine acc columns into one df with DateTime
-    relocate(Datetime) #move DateTime col to front ###
+    relocate(DateTime) #move DateTime col to front 
 }
 
 #read_depth processes the .txt depth file into a dataframe
