@@ -6,7 +6,18 @@ output: html_document
 ---
 ```{r load}
 source("util.R")
+library(tidyverse)
+library(lubridate)
+library(cetaceanbcg)
 ```
+
+```{r motionless}
+motionless_best <- 
+  read_tsv("narwhal_motionless.tsv") %>% 
+  filter(meets_criteria == "Y") %>% 
+  #add region id column 
+```
+
 
 ```{r narwhal-beats}
 narwhal_100hz <- read_acc("HDI0_Asgeir.txt", 
@@ -14,13 +25,13 @@ narwhal_100hz <- read_acc("HDI0_Asgeir.txt",
                      "HDK0_Asgeir.txt", 
                      nrow = Inf) %>% 
   mutate(
-    across(acc_x:acc_z), 
+    across(acc_x:acc_z, 
            filter_acc, fs = 100, upper = 25.0, #applies bandwidth filter
            .names = "{.col}_filt"),
-    jerk = jerk(cbind(acc_x_filt, acc_y_filt, acc_z_filt), 
+    jerk = jerk(cbind(acc_x_filt, acc_y_filt, acc_z_filt), #differencing
                 fs = 100, p = 4, n = 2 * 100 + 1),
-    jerk_se = shannon_entropy(jerk),
-    jerk_smooth = tma(jerk_se, 2 * 100),
+    jerk_se = shannon_entropy(jerk), #shannon entropy
+    jerk_smooth = tma(jerk_se, 2 * 100), #triangular moving average
     # Annotate regions
     rid_left = approx(bw_elg$start, 
                       bw_elg$region_id, 
