@@ -12,10 +12,11 @@ library(cetaceanbcg)
 ```
 
 ```{r motionless}
-motionless_best <- 
+ml_best_asgeir <- 
   read_tsv("narwhal_motionless.tsv") %>% 
-  filter(meets_criteria == "Y") %>% 
-  #add region id column 
+  filter(meets_criteria == "Y", narwhal_id == "asgeir") %>% 
+  mutate(region_id = row_number()) %>% 
+  select(-c("duration", narwhal_id, dive_phase, notes, meets_criteria))
 ```
 
 
