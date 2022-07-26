@@ -23,6 +23,22 @@ ml_best_asgeir <-
 ```{r narwhal-beats}
 win_s <- 2
 acc_fs <- 100
+
+should_retain <- function(dt, motionless, buffer_s) { #dt is DateTime col of acc data
+  retain <- logical(length(dt)) #retain is a column of T/F values 
+  motionless <- filter(motionless, time_end < max(dt), time_start > min(dt))
+  i_start <- as.numeric(motionless$time_start - buffer_s - dt[1],
+                        unit = "secs") * acc_fs + 1
+  i_end <- as.numeric(motionless$time_end + buffer_s - dt[1],
+                      unit = "secs") * acc_fs + 1
+  retain_idx <- map2(i_start, i_end, ~ .x:.y) %>% 
+    unlist() %>% 
+    pmin(length(dt)) %>% 
+    pmax(1)
+  retain[retain_idx] <- TRUE
+  retain
+}
+
 narwhal_100hz <- read_acc("HDI0_Asgeir.txt", 
                      "HDJ0_Asgeir.txt", 
                      "HDK0_Asgeir.txt", 
