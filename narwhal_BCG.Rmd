@@ -26,7 +26,7 @@ acc_fs <- 100
 narwhal_100hz <- read_acc("HDI0_Asgeir.txt", 
                      "HDJ0_Asgeir.txt", 
                      "HDK0_Asgeir.txt", 
-                     nrow = Inf) %>% 
+                     nrow = 1000) %>% 
   mutate(
     across(acc_x:acc_z, 
            filter_acc, fs = acc_fs, upper = 25.0, #applies bandwidth filter
@@ -34,15 +34,15 @@ narwhal_100hz <- read_acc("HDI0_Asgeir.txt",
     jerk = jerk(cbind(acc_x_filt, acc_y_filt, acc_z_filt), #differencing
                 fs = acc_fs, p = 4, n = win_s * acc_fs + 1),
     jerk_se = shannon_entropy(jerk), #shannon entropy
-    jerk_smooth = tma(jerk_se, win_s * acc_fs), #triangular moving average
+    jerk_smooth = tma(jerk_se, win_s * acc_fs), #triangular moving average - why do I have lots of NA values?
     # Annotate regions
     rid_left = approx(ml_best_asgeir$time_start, 
                       ml_best_asgeir$region_id, 
-                      dt, 
+                      DateTime, 
                       "constant")$y,
     rid_right = approx(ml_best_asgeir$time_end, 
                        ml_best_asgeir$region_id, 
-                       dt, 
+                       DateTime, 
                        "constant", 
                        yleft = 0)$y + 1,
     region_id = ifelse(rid_left == rid_right, rid_left, NA),
