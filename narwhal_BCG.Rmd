@@ -21,32 +21,34 @@ ml_best_asgeir <-
 
 
 ```{r narwhal-beats}
+win_s <- 2
+acc_fs <- 100
 narwhal_100hz <- read_acc("HDI0_Asgeir.txt", 
                      "HDJ0_Asgeir.txt", 
                      "HDK0_Asgeir.txt", 
                      nrow = Inf) %>% 
   mutate(
     across(acc_x:acc_z, 
-           filter_acc, fs = 100, upper = 25.0, #applies bandwidth filter
+           filter_acc, fs = acc_fs, upper = 25.0, #applies bandwidth filter
            .names = "{.col}_filt"),
     jerk = jerk(cbind(acc_x_filt, acc_y_filt, acc_z_filt), #differencing
-                fs = 100, p = 4, n = 2 * 100 + 1),
+                fs = acc_fs, p = 4, n = win_s * acc_fs + 1),
     jerk_se = shannon_entropy(jerk), #shannon entropy
-    jerk_smooth = tma(jerk_se, 2 * 100), #triangular moving average
+    jerk_smooth = tma(jerk_se, win_s * acc_fs), #triangular moving average
     # Annotate regions
-    rid_left = approx(bw_elg$start, 
-                      bw_elg$region_id, 
+    rid_left = approx(ml_best_asgeir$time_start, 
+                      ml_best_asgeir$region_id, 
                       dt, 
                       "constant")$y,
-    rid_right = approx(bw_elg$stop, 
-                       bw_elg$region_id, 
+    rid_right = approx(ml_best_asgeir$time_end, 
+                       ml_best_asgeir$region_id, 
                        dt, 
                        "constant", 
                        yleft = 0)$y + 1,
     region_id = ifelse(rid_left == rid_right, rid_left, NA),
     # Zero-out signal in non-valid regions (i.e. remove movement artifacts)
     jerk_smooth = ifelse(is.na(region_id), 0, jerk_smooth),
-    bcg_beat = find_beats(jerk_smooth, 100, 2)
+    bcg_beat = find_beats(jerk_smooth, acc_fs, win_s)
   ) %>% 
   # Calculate heart rate within each region
   group_by(region_id) %>% 
