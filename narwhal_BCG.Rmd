@@ -42,8 +42,8 @@ should_retain <- function(dt, motionless, buffer_s) { #dt is DateTime col of acc
 narwhal_100hz <- read_acc("HDI0_Asgeir.txt", 
                           "HDJ0_Asgeir.txt", 
                           "HDK0_Asgeir.txt", 
-                          nrow = 4.5e6) %>% 
-  slice(3e6:4.5e6) %>% 
+                          nrow = Inf) %>% 
+  #slice(3e6:4.5e6) %>% 
   mutate(retain = should_retain(DateTime, ml_best_asgeir, 2)) %>% 
   filter(retain) %>% 
   mutate(
@@ -84,3 +84,9 @@ narwhal_100hz <- read_acc("HDI0_Asgeir.txt",
   # ungroup() %>% 
   # select(-c(rid_left, rid_right))
 ```
+
+```{r plot}
+ggplot(narwhal_100hz, aes(x = jerk_smooth)) +
+  geom_density() #plots a density plot to evaluate data 
+```
+
