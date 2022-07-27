@@ -26,70 +26,90 @@ ml_all_asgeir <-
   select(-c("duration", narwhal_id, dive_phase, notes, meets_criteria))
 ```
 
+```{r read_ml}
+#function to read motionless period tsv file into a dataframe. 
+#parameters: 
+#path - path to file 
+#narwhal_id - narhwal id as recorded in motionless tsv
+#all - if all = FALSE, will return a datatable with only the periods that have 'Y' under meets_criteria column. if all = TRUE, will return a datatable with all motionless periods in the tsv file. 
 
-```{r narwhal-beats}
-win_s <- 0.5
-acc_fs <- 100
-
-should_retain <- function(dt, motionless, buffer_s) { #dt is DateTime col of acc data
-  retain <- logical(length(dt)) #retain is a column of T/F values 
-  motionless <- filter(motionless, time_end < max(dt), time_start > min(dt))
-  i_start <- as.numeric(motionless$time_start - buffer_s - dt[1],
-                        unit = "secs") * acc_fs + 1
-  i_end <- as.numeric(motionless$time_end + buffer_s - dt[1],
-                      unit = "secs") * acc_fs + 1
-  retain_idx <- map2(i_start, i_end, ~ .x:.y) %>% 
-    unlist() %>% 
-    pmin(length(dt)) %>% 
-    pmax(1)
-  retain[retain_idx] <- TRUE
-  retain
+read_ml <- function(path, narwhal_id, all = FALSE){
+  motionless <- read_tsv(path) %>% 
+    if(all == FALSE) 
+      filter(meets_criteria == "Y")
+  filter(narwhal_id == narwhal_id)
+  mutate(region_id = rownumber()) %>% 
+  select(-c("duration", narwhal_id, dive_phase, notes, meets_criteria))
+  motionless
 }
 
-narwhal_100hz <- read_acc("HDI0_Asgeir.txt", 
-                          "HDJ0_Asgeir.txt", 
-                          "HDK0_Asgeir.txt", 
-                          nrow = Inf) %>% 
-  #slice(3e6:4.5e6) %>% 
-  mutate(retain = should_retain(DateTime, ml_all_asgeir, 2)) %>% 
-  filter(retain) %>% 
-  mutate(
-    timestep = as.numeric(DateTime - lag(DateTime, default = DateTime[1] - acc_fs * 2), 
-                          unit = "secs"),
-    contiguous = abs(timestep - 1 / acc_fs) < 1e-4,
-    contiguous_id = cumsum(!contiguous)
-  ) %>% 
-  group_by(contiguous_id) %>% 
-  mutate(
-    across(acc_x:acc_z, 
-           filter_acc, fs = acc_fs, upper = 25.0, #applies bandwidth filter
-           .names = "{.col}_filt"),
-    jerk = jerk(cbind(acc_x_filt, acc_y_filt, acc_z_filt), #differencing
-                fs = acc_fs, p = 4, n = win_s * acc_fs + 1),
-    jerk_se = shannon_entropy(jerk), #shannon entropy
-    jerk_smooth = tma(jerk_se, win_s * acc_fs), #triangular moving average - why do I have lots of NA values?
-    # Annotate regions
-    rid_left = approx(ml_all_asgeir$time_start, 
-                      ml_all_asgeir$region_id, 
-                      DateTime, 
-                      "constant")$y,
-    rid_right = approx(ml_all_asgeir$time_end, 
-                       ml_all_asgeir$region_id, 
-                       DateTime, 
-                       "constant", 
-                       yleft = 0)$y + 1,
-    rid = ifelse(rid_left == rid_right, rid_left, NA),
-    # Zero-out signal in non-valid regions (i.e. remove movement artifacts)
-    jerk_smooth = ifelse(is.na(rid), 0, jerk_smooth)
-  ) %>% 
-  ungroup()
-    #bcg_beat = find_beats(jerk_smooth, acc_fs, win_s) #getting an error here 
-  # ) %>% 
-  # # Calculate heart rate within each region
-  # group_by(region_id) %>% 
-  # mutate(bcg_bpm = bpm(bcg_beat, dt)) %>% 
-  # ungroup() %>% 
-  # select(-c(rid_left, rid_right))
+```
+
+
+```{r narwhal-beats}
+#should turn this into a function that takes paths to acc files and motionless df, win_s, acc_fs , 
+narwhal_beats <- function(ml_df, win_s, acc_fs){
+  
+  should_retain <- function(dt, motionless, buffer_s) { #dt is DateTime col of acc data
+    retain <- logical(length(dt)) #retain is a column of T/F values 
+    motionless <- filter(motionless, time_end < max(dt), time_start > min(dt))
+    i_start <- as.numeric(motionless$time_start - buffer_s - dt[1],
+                          unit = "secs") * acc_fs + 1
+    i_end <- as.numeric(motionless$time_end + buffer_s - dt[1],
+                        unit = "secs") * acc_fs + 1
+    retain_idx <- map2(i_start, i_end, ~ .x:.y) %>% 
+      unlist() %>% 
+      pmin(length(dt)) %>% 
+      pmax(1)
+    retain[retain_idx] <- TRUE
+    retain
+  }
+  
+  narwhal_100hz <- read_acc("HDI0_Asgeir.txt", 
+                            "HDJ0_Asgeir.txt", 
+                            "HDK0_Asgeir.txt", 
+                            nrow = Inf) %>% 
+    mutate(retain = should_retain(DateTime, ml_all_asgeir, 2)) %>% 
+    filter(retain) %>% 
+    mutate(
+      timestep = as.numeric(DateTime - lag(DateTime, default = DateTime[1] - acc_fs * 2), 
+                            unit = "secs"),
+      contiguous = abs(timestep - 1 / acc_fs) < 1e-4,
+      contiguous_id = cumsum(!contiguous)
+    ) %>% 
+    group_by(contiguous_id) %>% 
+    mutate(
+      across(acc_x:acc_z, 
+             filter_acc, fs = acc_fs, upper = 25.0, #applies bandwidth filter
+             .names = "{.col}_filt"),
+      jerk = jerk(cbind(acc_x_filt, acc_y_filt, acc_z_filt), #differencing
+                  fs = acc_fs, p = 4, n = win_s * acc_fs + 1),
+      jerk_se = shannon_entropy(jerk), #shannon entropy
+      jerk_smooth = tma(jerk_se, win_s * acc_fs), #triangular moving average - why do I have lots of NA values?
+      # Annotate regions
+      rid_left = approx(ml_all_asgeir$time_start, 
+                        ml_all_asgeir$region_id, 
+                        DateTime, 
+                        "constant")$y,
+      rid_right = approx(ml_all_asgeir$time_end, 
+                         ml_all_asgeir$region_id, 
+                         DateTime, 
+                         "constant", 
+                         yleft = 0)$y + 1,
+      rid = ifelse(rid_left == rid_right, rid_left, NA),
+      # Zero-out signal in non-valid regions (i.e. remove movement artifacts)
+      jerk_smooth = ifelse(is.na(rid), 0, jerk_smooth)
+    ) %>% 
+    ungroup()
+}
+narwhal_beats(ml_best_asgeir, 2, 100)
+#bcg_beat = find_beats(jerk_smooth, acc_fs, win_s) #getting an error here 
+# ) %>% 
+# # Calculate heart rate within each region
+# group_by(region_id) %>% 
+# mutate(bcg_bpm = bpm(bcg_beat, dt)) %>% 
+# ungroup() %>% 
+# select(-c(rid_left, rid_right))
 ```
 
 ```{r plot}
