@@ -16,14 +16,16 @@ ml_best_asgeir <-
   read_tsv("narwhal_motionless.tsv") %>% 
   filter(meets_criteria == "Y", narwhal_id == "asgeir") %>% 
   mutate(region_id = row_number()) %>% 
-  select(-c("duration", narwhal_id, dive_phase, notes, meets_criteria))
+  select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
+  arrange(time_start)
 ```
 
 ```{r ml_all}
 ml_all_asgeir <- 
   read_tsv("narwhal_motionless.tsv") %>% 
   mutate(region_id = row_number()) %>% 
-  select(-c("duration", narwhal_id, dive_phase, notes, meets_criteria))
+  select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
+  arrange(time_start)
 ```
 
 ```{r read_ml}
@@ -33,16 +35,18 @@ ml_all_asgeir <-
 #narwhal_id - narhwal id as recorded in motionless tsv
 #all - if all = FALSE, will return a datatable with only the periods that have 'Y' under meets_criteria column. if all = TRUE, will return a datatable with all motionless periods in the tsv file. 
 
-read_ml <- function(path, narwhal_id, all = FALSE){
-  motionless <- read_tsv(path) %>% 
-    if(all == FALSE) 
-      filter(meets_criteria == "Y")
-  filter(narwhal_id == narwhal_id)
-  mutate(region_id = rownumber()) %>% 
-  select(-c("duration", narwhal_id, dive_phase, notes, meets_criteria))
-  motionless
-}
-
+#code for function: not working yet
+# read_ml <- function(path, narwhal_id, all = FALSE){
+#   motionless <- read_tsv(path) %>% 
+#     if(all == TRUE) 
+#       filter(meets_criteria == "Y", narwhal_id == narwhal_id)
+#   else 
+#     filter(narwhal_id == narwhal_id)
+#   mutate(region_id == rownumber()) %>% 
+#     select(-c("duration", narwhal_id, dive_phase, notes, meets_criteria))
+#   motionless
+# }
+# read_ml("narwhal_motionless.tsv", asgeir, FALSE) #getting an error 
 ```
 
 
@@ -182,3 +186,4 @@ s2ns <- expand_grid(
 ) %>% 
   mutate(s2n = map2_dbl(win_size, upper, some_function))
 ```
+
