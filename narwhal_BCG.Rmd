@@ -47,10 +47,22 @@ read_ml <- function(path, narwhal_id, all = FALSE){
 
 
 ```{r narwhal-beats}
-#should turn this into a function that takes paths to acc files and motionless df, win_s, acc_fs , 
-narwhal_beats <- function(ml_df, win_s, acc_fs){
+#narwhal_beats takes acceleration data, and applies all of the necessary filters, smoothers, and calculations, and returns a df with columns with each of these calculations. 
+#Parameters: 
+#ml_df - a dataframe with time_start, time_end, and region_id as columns 
+#win_s - a number of seconds to calculate the moving averages. 
+#acc_fs - frequency of acceleration data 
+#upper - upper frequency cutoff, should increase with decreasing body size. 
+
+narwhal_beats <- function(ml_df, win_s, acc_fs, upper){
   
-  should_retain <- function(dt, motionless, buffer_s) { #dt is DateTime col of acc data
+#should_retain returns a dataframe with a datetime col with all datetimes in acc data, and a column with T/F values. If a datetime in a particular row is found within a motionless period and its buffer, it will have TRUE under retain col for that row. 
+#Parameters:
+#dt - DateTime col of acceleration data
+#motionless - motionless periods dataframe with time_start, time_end, and region_id columns
+#buffer_s - number of seconds that should be added to the motionless period on either end
+  
+  should_retain <- function(dt, motionless, buffer_s) { 
     retain <- logical(length(dt)) #retain is a column of T/F values 
     motionless <- filter(motionless, time_end < max(dt), time_start > min(dt))
     i_start <- as.numeric(motionless$time_start - buffer_s - dt[1],
@@ -65,10 +77,10 @@ narwhal_beats <- function(ml_df, win_s, acc_fs){
     retain
   }
   
-  narwhal_100hz <- read_acc("HDI0_Asgeir.txt", 
-                            "HDJ0_Asgeir.txt", 
-                            "HDK0_Asgeir.txt", 
-                            nrow = Inf) %>% 
+  read_acc("HDI0_Asgeir.txt", 
+           "HDJ0_Asgeir.txt", 
+           "HDK0_Asgeir.txt", 
+           nrow = Inf) %>% 
     mutate(retain = should_retain(DateTime, ml_all_asgeir, 2)) %>% 
     filter(retain) %>% 
     mutate(
@@ -80,19 +92,19 @@ narwhal_beats <- function(ml_df, win_s, acc_fs){
     group_by(contiguous_id) %>% 
     mutate(
       across(acc_x:acc_z, 
-             filter_acc, fs = acc_fs, upper = 25.0, #applies bandwidth filter
+             filter_acc, fs = acc_fs, upper = upper, #applies bandwidth filter
              .names = "{.col}_filt"),
       jerk = jerk(cbind(acc_x_filt, acc_y_filt, acc_z_filt), #differencing
                   fs = acc_fs, p = 4, n = win_s * acc_fs + 1),
       jerk_se = shannon_entropy(jerk), #shannon entropy
       jerk_smooth = tma(jerk_se, win_s * acc_fs), #triangular moving average - why do I have lots of NA values?
       # Annotate regions
-      rid_left = approx(ml_all_asgeir$time_start, 
-                        ml_all_asgeir$region_id, 
+      rid_left = approx(ml_df$time_start, 
+                        ml_df$region_id, 
                         DateTime, 
                         "constant")$y,
-      rid_right = approx(ml_all_asgeir$time_end, 
-                         ml_all_asgeir$region_id, 
+      rid_right = approx(ml_df$time_end, 
+                         ml_df$region_id, 
                          DateTime, 
                          "constant", 
                          yleft = 0)$y + 1,
@@ -102,7 +114,9 @@ narwhal_beats <- function(ml_df, win_s, acc_fs){
     ) %>% 
     ungroup()
 }
-narwhal_beats(ml_best_asgeir, 2, 100)
+narwhal_100hz <- narwhal_beats(ml_best_asgeir, 1, 100)
+
+  
 #bcg_beat = find_beats(jerk_smooth, acc_fs, win_s) #getting an error here 
 # ) %>% 
 # # Calculate heart rate within each region
