@@ -12,6 +12,7 @@ library(cetaceanbcg)
 ```
 
 ```{r ml_best}
+#reads motionless data from best periods into a dataframe with columns: time_start, time_end, and region_id 
 ml_best_asgeir <- 
   read_tsv("narwhal_motionless.tsv") %>% 
   filter(meets_criteria == "Y", narwhal_id == "asgeir") %>% 
@@ -163,18 +164,45 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
   theme_classic()
 ```
 
+```{r calc_psd}
+calc_s2n <- function(df){
+  
+  bcg3d_psd <- with(df, pspectrum(jerk_smooth[!is.na(rid)], 100))  #i think this takes narwhal_100hz, and returns a bunch of values associated with psd. It excludes any rows were rid = NA. Specifies that sampling freq is 100 hz. 
+
+psd_df <- tibble( #creates a df with 1 column of frequencies, and another with spec(?) corresponding to those frequencies
+  freq_hz = bcg3d_psd$freq, 
+  spec = bcg3d_psd$spec
+) %>% 
+  mutate(freq_bpm = freq_hz * 60) %>% #adds a 3rd column freq_bpm, which is the frequencies in freq_hz in units of bpm 
+  filter(freq_bpm <= 50) #removes any rows where freq_bpm > 50 bpm, since this is outside the expected range of a narwhal hr. 
+
+
+signal_rng <- c(10, 20) #creates a vector with boundary values considered "signal"
+
+signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2])) #creates a new df with same cols and values from psd_df, but only includes rows in which freq_bpm is between 10 and 20 bpm. 
+
+psd_s2n <- psd_df %>% # creates a df with 3 columns: signal,  noise, and s2n (signal-to-noise-ratio) Values for s2n should be at least > 1. 
+  summarize(signal = pracma::trapz(freq_bpm[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]],
+                                  spec[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]]), #calc signal 
+            noise = pracma::trapz(freq_bpm, spec) - signal) %>% # calc noise
+  mutate(s2n = signal/noise) #add s2n col 
+  psd_s2n$s2n #return s2n
+}
+```
+
+
 ```{r}
 quality_check <- function(win_size, upper) {
-  narwhal_beats(ml_best_asgeir, win_s, acc_fs = 100, upper)
-  calculate_psd()
-  calculate_s2n() # <- this is your return value
+  narwhal_beats(ml_best_asgeir, win_size, acc_fs = 100, upper)
+  
+  calc_s2n(narwhal_100hz)
 }
 
 win_sizes <- c(0.5, 1.0, 1.5, 2.0)
 uppers <- c(10, 15, 20, 25)
 s2ns <- expand_grid(
-  win_s = win_sizes,
+  win_size = win_sizes,
   upper = uppers) %>% 
-  mutate(s2n = map2_dbl(win_s, upper, quality_check(win_s, upper)))
+  mutate(s2n = map2_dbl(win_size, upper, quality_check(win_size, upper)))
 ```
 
