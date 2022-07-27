@@ -175,6 +175,6 @@ uppers <- c(10, 15, 20, 25)
 s2ns <- expand_grid(
   win_s = win_sizes,
   upper = uppers) %>% 
-  mutate(s2n = map2_dbl(win_s, upper, quality_check))
+  mutate(s2n = map2_dbl(win_s, upper, quality_check(win_s, upper)))
 ```
 
