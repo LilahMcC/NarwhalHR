@@ -117,3 +117,54 @@ ggplot(narwhal_100hz, aes(x = jerk_smooth)) +
   geom_density() #plots a density plot to evaluate data 
 ```
 
+
+```{r}
+bcg3d_psd <- with(narwhal_100hz, pspectrum(jerk_smooth[!is.na(rid)], 100))
+
+psd_df <- tibble(
+  freq_hz = bcg3d_psd$freq,
+  spec = bcg3d_psd$spec
+) %>% 
+  mutate(freq_bpm = freq_hz * 60) %>% 
+  filter(freq_bpm <= 50)
+
+signal_rng <- c(10, 20)
+
+signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2]))
+
+psd_s2n <- psd_df %>% 
+  summarize(signal = pracma::trapz(freq_bpm[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]],
+                                   spec[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]]),
+            noise = pracma::trapz(freq_bpm, spec) - signal) %>% 
+  mutate(s2n = signal / noise)
+
+ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
+  geom_area(data = signal_df, fill = "grey80") +
+  geom_path() +
+  annotate("text", 
+           x = mean(signal_rng), 
+           y = max(signal_df$spec) * 1.1, 
+           label = sprintf("S2N=%0.3f", psd_s2n$s2n)) +
+  labs(x = "Frequency (bpm)",
+       y = "Power spectral density") +
+  theme_classic()
+```
+
+```{r}
+run_bcg <- function(win_size, upper) {
+  
+}
+some_function <- function(win_size, upper) {
+  do_all_the_bcg_stuff(with, win_size, and, upper)
+  calculate_psd()
+  calculate_s2n() # <- this is your return value
+}
+
+win_sizes <- c(0.5, 1.0, 1.5, 2.0)
+uppers <- c(10, 15, 20, 25)
+s2ns <- expand_grid(
+  win_size = win_sizes,
+  upper = uppers
+) %>% 
+  mutate(s2n = map2_dbl(win_size, upper, some_function))
+```
