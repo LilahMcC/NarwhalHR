@@ -85,7 +85,7 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper){
            "HDJ0_Asgeir.txt", 
            "HDK0_Asgeir.txt", 
            nrow = Inf) %>% 
-    mutate(retain = should_retain(DateTime, ml_all_asgeir, 2)) %>% 
+    mutate(retain = should_retain(DateTime, ml_df, 2)) %>% 
     filter(retain) %>% 
     mutate(
       timestep = as.numeric(DateTime - lag(DateTime, default = DateTime[1] - acc_fs * 2), 
@@ -118,9 +118,9 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper){
     ) %>% 
     ungroup()
 }
-narwhal_100hz <- narwhal_beats(ml_best_asgeir, 1, 100)
+narwhal_100hz <- narwhal_beats(ml_best_asgeir, win_s = 1, acc_fs = 100, upper = 25.0) #should rid = NA in some cases?
 
-  
+#maybe add back later
 #bcg_beat = find_beats(jerk_smooth, acc_fs, win_s) #getting an error here 
 # ) %>% 
 # # Calculate heart rate within each region
@@ -128,11 +128,6 @@ narwhal_100hz <- narwhal_beats(ml_best_asgeir, 1, 100)
 # mutate(bcg_bpm = bpm(bcg_beat, dt)) %>% 
 # ungroup() %>% 
 # select(-c(rid_left, rid_right))
-```
-
-```{r plot}
-ggplot(narwhal_100hz, aes(x = jerk_smooth)) +
-  geom_density() #plots a density plot to evaluate data 
 ```
 
 
@@ -169,11 +164,8 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
 ```
 
 ```{r}
-run_bcg <- function(win_size, upper) {
-  
-}
-some_function <- function(win_size, upper) {
-  do_all_the_bcg_stuff(with, win_size, and, upper)
+quality_check <- function(win_size, upper) {
+  narwhal_beats(ml_best_asgeir, win_s, acc_fs = 100, upper)
   calculate_psd()
   calculate_s2n() # <- this is your return value
 }
@@ -181,9 +173,8 @@ some_function <- function(win_size, upper) {
 win_sizes <- c(0.5, 1.0, 1.5, 2.0)
 uppers <- c(10, 15, 20, 25)
 s2ns <- expand_grid(
-  win_size = win_sizes,
-  upper = uppers
-) %>% 
-  mutate(s2n = map2_dbl(win_size, upper, some_function))
+  win_s = win_sizes,
+  upper = uppers) %>% 
+  mutate(s2n = map2_dbl(win_s, upper, quality_check))
 ```
 
