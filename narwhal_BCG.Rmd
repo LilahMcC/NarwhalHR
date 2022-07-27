@@ -11,7 +11,7 @@ library(lubridate)
 library(cetaceanbcg)
 ```
 
-```{r motionless}
+```{r ml_best}
 ml_best_asgeir <- 
   read_tsv("narwhal_motionless.tsv") %>% 
   filter(meets_criteria == "Y", narwhal_id == "asgeir") %>% 
@@ -19,9 +19,16 @@ ml_best_asgeir <-
   select(-c("duration", narwhal_id, dive_phase, notes, meets_criteria))
 ```
 
+```{r ml_all}
+ml_all_asgeir <- 
+  read_tsv("narwhal_motionless.tsv") %>% 
+  mutate(region_id = row_number()) %>% 
+  select(-c("duration", narwhal_id, dive_phase, notes, meets_criteria))
+```
+
 
 ```{r narwhal-beats}
-win_s <- 1
+win_s <- 0.5
 acc_fs <- 100
 
 should_retain <- function(dt, motionless, buffer_s) { #dt is DateTime col of acc data
@@ -44,7 +51,7 @@ narwhal_100hz <- read_acc("HDI0_Asgeir.txt",
                           "HDK0_Asgeir.txt", 
                           nrow = Inf) %>% 
   #slice(3e6:4.5e6) %>% 
-  mutate(retain = should_retain(DateTime, ml_best_asgeir, 2)) %>% 
+  mutate(retain = should_retain(DateTime, ml_all_asgeir, 2)) %>% 
   filter(retain) %>% 
   mutate(
     timestep = as.numeric(DateTime - lag(DateTime, default = DateTime[1] - acc_fs * 2), 
@@ -62,12 +69,12 @@ narwhal_100hz <- read_acc("HDI0_Asgeir.txt",
     jerk_se = shannon_entropy(jerk), #shannon entropy
     jerk_smooth = tma(jerk_se, win_s * acc_fs), #triangular moving average - why do I have lots of NA values?
     # Annotate regions
-    rid_left = approx(ml_best_asgeir$time_start, 
-                      ml_best_asgeir$region_id, 
+    rid_left = approx(ml_all_asgeir$time_start, 
+                      ml_all_asgeir$region_id, 
                       DateTime, 
                       "constant")$y,
-    rid_right = approx(ml_best_asgeir$time_end, 
-                       ml_best_asgeir$region_id, 
+    rid_right = approx(ml_all_asgeir$time_end, 
+                       ml_all_asgeir$region_id, 
                        DateTime, 
                        "constant", 
                        yleft = 0)$y + 1,
