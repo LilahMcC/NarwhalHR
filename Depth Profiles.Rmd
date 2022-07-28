@@ -10,68 +10,42 @@ output:
     highlights: monotone
 ---
 
-### Before Starting: Load libraries
+#### Before Starting: Load libraries
 ```{r = load_packages, message = FALSE, results = FALSE}
 library(lubridate)
 library(tidyverse)
 library(plotly)
 library(DT)
 library(glue)
+source("util.R")
 ```
 
-
-### Task 1 and 2:  
-Read the file into a dataframe, and make DateTimes compatible with POSIXct
+#### Read filed into a dataframe, and make DateTimes compatible with POSIXct
 ```{r = fix_datetimes, message = FALSE, results = FALSE}
-depth_data <- read_tsv("Depth_Asgeir.txt") %>% #read file 
-  mutate(DateTime = mdy_hms(`Date time`), .keep = "unused") #fix datetime
+depth_asgeir <- read_depth("Depth_Asgeir.txt")
+depth_balder <- read_depth("Depth_Balder.txt")
 ```
 
-
-### Task 3   
-**Make Figures**  
-1. Depth profile for the whole deployment  
-1. Depth profile for 1 day   
-1. Depth profile for 1 dive   
-
-```{r plot_dive_func, message = FALSE, echo = FALSE}
-# plot_dive_func plots a dive profile given a set of parameters to minimize repetition of code when plotting dive profiles at multiple timescales.
-
-# Parameters: 
-# dataframe - must be a dataframe. 
-# start_time/end_time - must be character strings in 'YYYY-MM-DD hh:mm:ss' format.
-# title - must be a character string in "Graph Title" format. 
-# interactive - FALSE (default) plots a regular graph, TRUE plots an interactive graph. 
-
-plot_dive <- function(dataframe, start_time, end_time, title, interactive = FALSE) {
-  one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
-  dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) +
-    geom_line() +
-    scale_y_reverse() + #makes depth right orientation 
-    labs(title = title,
-        x = "Time",
-        y = "Depth (m)") + #changes labels on axes and title 
-    theme_bw()  #white background 
-
-  if(interactive == FALSE)
-    dive_plot
-  else ggplotly(dive_plot)
-}
-```
-
-```{r = plot_all_figures, echo = FALSE, messages = FALSE}
+#### Dive Profile Plots:  
+```{r = plot_asgeir_depth, echo = FALSE, messages = FALSE}
 # plot whole deployment 
-start_dep <- depth_data$DateTime[1]
-end_dep <- depth_data$DateTime[nrow(depth_data)]
-plot_dive(depth_data, start_dep,end_dep,"Asgeir Dive Profile 2018 Deployment")
+start_dep_asgeir <- depth_asgeir$DateTime[1]
+end_dep_asgeir <- depth_asgeir$DateTime[nrow(depth_asgeir)]
+plot_dive(depth_asgeir, start_dep_asgeir, end_dep_asgeir, "Asgeir Dive Profile 2018 Deployment")
 #plot day
 start_day <- ymd_hms('2018-08-24 00:00:00')
 end_day <- start_day + days(1)
-plot_dive(depth_data, start_day, end_day, "Asgeir Dive Profile August 24, 2018")
+plot_dive(depth_asgeir, start_day, end_day, "Asgeir Dive Profile August 24, 2018")
 #plot one dive 
 start_dive <- ymd_hms('2018-08-24 08:26:01')
 end_dive <- ymd_hms('2018-08-24 08:49:04')
-plot_dive(depth_data, start_dive, end_dive, "Asgeir Dive Profile Single Dive August 24, 2018", TRUE)
+plot_dive(depth_asgeir, start_dive, end_dive, "Asgeir Dive Profile Single Dive August 24, 2018", TRUE)
+```
+
+```{r plot_balder_depth, echo = FALSE, messages = FALSE}
+start_dep_balder <- 	depth_balder$DateTime[1]
+end_dep_balder <- depth_balder$DateTime[nrow(depth_balder)]
+plot_dive(depth_balder, start_dep_balder, end_dep_balder, "Balder Dive Profile 2018 Deployment")
 ```
 
 

@@ -119,7 +119,7 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper){
     ) %>% 
     ungroup()
 }
-narwhal_100hz <- narwhal_beats(ml_best_asgeir, win_s = 1, acc_fs = 100, upper = 25.0) #should rid = NA in some cases?
+narwhal_100hz <- narwhal_beats(ml_best_asgeir, win_s = 2, acc_fs = 100, upper = 25) #should rid = NA in some cases?
 
 #maybe add back later
 #bcg_beat = find_beats(jerk_smooth, acc_fs, win_s) #getting an error here 
@@ -133,7 +133,7 @@ narwhal_100hz <- narwhal_beats(ml_best_asgeir, win_s = 1, acc_fs = 100, upper = 
 
 
 ```{r}
-bcg3d_psd <- with(narwhal_100hz, pspectrum(jerk_smooth[!is.na(rid)], 100))
+bcg3d_psd <- with(narwhal_100hz, pspectrum(jerk_smooth[!is.na(rid)], 100)) # i'm getting an error here when I try to do this on ms_asgeir_all 
 
 psd_df <- tibble(
   freq_hz = bcg3d_psd$freq,
