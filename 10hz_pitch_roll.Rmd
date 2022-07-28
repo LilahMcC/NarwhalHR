@@ -9,11 +9,6 @@ output:
     theme: default 
     highlights: monotone
 ---
-To do: 
-Figure out why pipes aren't working and make them work 
-Make code cleaner 
-
-
 load libraries: 
 ```{r load, echo = FALSE, message = FALSE}
 library(tidyverse)
@@ -21,26 +16,46 @@ library(lubridate)
 source("util.R")
 ```
 
-  
+Does it make sense that these dataframes are exactly the same length? 
 ```{r read_into_wide,  echo = FALSE, message = FALSE}
-acc_wide <- read_acc("HDI0_Asgeir.txt", 
+#asgeir
+acc_wide_asgeir <- read_acc("HDI0_Asgeir.txt", 
                      "HDJ0_Asgeir.txt", 
                      "HDK0_Asgeir.txt", 
                      nrow = Inf) %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
          pitch = pitch(acc_x, anorm),
          roll = roll(acc_y, acc_z))
+
+#balder
+acc_wide_balder <- read_acc("HDI0_Balder.txt", 
+                     "HDJ0_Balder.txt", 
+                     "HDK0_Balder.txt", 
+                     nrow = Inf) %>% 
+  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
+         pitch = pitch(acc_x, anorm),
+         roll = roll(acc_y, acc_z))
+
 ```
 
 ```{r combine_acc_depth}
-depth_df <- read_depth("Depth_Asgeir.txt")          
-ten_hz <- acc_wide %>% 
-  slice(seq(1, nrow(acc_wide), 10)) %>%  #extracts every 10th row 
-  mutate(depth = approx(depth_df$DateTime, depth_df$Depth, xout = DateTime)$y)
+#asgeir
+depth_asgeir <- read_depth("Depth_Asgeir.txt")          
+ten_hz_asgeir <- acc_wide_asgeir %>% 
+  slice(seq(1, nrow(acc_wide_asgeir), 10)) %>%  #extracts every 10th row 
+  mutate(depth = approx(depth_asgeir$DateTime, depth_asgeir$Depth, xout = DateTime)$y)
+
+#balder
+depth_balder <- read_depth("Depth_Balder.txt")
+ten_hz_balder <- acc_wide_balder %>% 
+  slice(seq(1, nrow(acc_wide_balder), 10)) %>%  #extracts every 10th row 
+  mutate(depth = approx(depth_asgeir$DateTime, depth_asgeir$Depth, xout = DateTime)$y)
+#this is not working. It returns a depth column with all NA values 
 ```
 
 ```{r save}
-saveRDS(ten_hz, "Asgeir_10hz.rds")
+saveRDS(ten_hz_asgeir, "Asgeir_10hz.rds")
+saveRDS(ten_hz_balder, "Balder_10hz.rds")
 ```
 
 
