@@ -5,13 +5,19 @@ date: '2022-07-19'
 output: html_document
 ---
 
-```{r}
+```{r load}
 library(tsviewer)
 library(tidyverse)
-asgeir_10hz <- readRDS("Asgeir_10hz.rds")
+source("src/data.R")
 ```
 
-```{r}
-# Launch the tool
-run_tsviewer(asgeir_10hz, "asgeir")
+```{r read}
+asgeir_10hz <- readRDS(find_10hz("asgeir"))
+balder_10hz <- readRDS(find_10hz("balder"))
+```
+
+
+```{r launch}
+#run_tsviewer(asgeir_10hz, "asgeir")
+run_tsviewer(balder_10hz, "balder") 
 ```
