@@ -35,3 +35,10 @@ find_motionless <- function(narwhal_id) {
       full.names = TRUE,
       ignore.case = TRUE)
 }
+
+find_10hz <- function(narwhal_id) {
+  dir("data/derived_data/biologging/", 
+      pattern = sprintf("%s_10hz.rds", narwhal_id),
+      full.names = TRUE, 
+      ignore.case = TRUE)
+}
