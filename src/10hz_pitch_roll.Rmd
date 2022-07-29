@@ -17,14 +17,15 @@ source("src/util.R")
 source("src/data.R")
 ```
 
-Does it make sense that these dataframes are exactly the same length? 
-```{r read_into_wide,  echo = FALSE, message = FALSE}
+does it make sense that acc_wide_balder is exactly 2x as long as acc_wide_asgeir
+```{r read,  echo = FALSE, message = FALSE}
 #asgeir
 acc_wide_asgeir <- read_acc("asgeir",  nrow = Inf) %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
          pitch = pitch(acc_x, anorm),
          roll = roll(acc_y, acc_z))
 
+depth_asgeir <- read_depth(find_depth("asgeir"))   
 
 
 #balder
@@ -32,24 +33,29 @@ acc_wide_balder <- read_acc("balder",  nrow = Inf) %>%
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
          pitch = pitch(acc_x, anorm),
          roll = roll(acc_y, acc_z))
+
+depth_balder <- read_depth(find_depth("balder"))
 ```
 
-```{r combine_acc_depth}
-#asgeir
-depth_asgeir <- read_depth(find_depth("asgeir"))          
-ten_hz_asgeir <- acc_wide_asgeir %>% 
-  slice(seq(1, nrow(acc_wide_asgeir), 10)) %>%  #extracts every 10th row 
-  mutate(depth = approx(depth_asgeir$DateTime, depth_asgeir$Depth, xout = DateTime)$y) %>%
-  left_join(select(depth_asgeir, DateTime, Clicking, Buzzing), by = "DateTime") %>% 
-  # mutate(across(c(Clicking, Buzzing), ~ !(is.na(.x) | i))) FIXME LATER
-  drop_na(depth)
+```{r combine}
 
-#balder
-depth_balder <- read_depth(find_depth("balder"))
-ten_hz_balder <- acc_wide_balder %>% 
-  slice(seq(1, nrow(acc_wide_balder), 10)) %>%  #extracts every 10th row 
-  mutate(depth = approx(depth_asgeir$DateTime, depth_asgeir$Depth, xout = DateTime)$y)
-#this is not working. It returns a depth column with all NA values 
+#comb_acc_depth takes in a acc_wide 100hz and depth 1hz  df and combines them to create a 10hz df. 
+#Parameters: 
+#acc_wide - the acceleration df at 100hz
+#depth - the depth df at 1hz. 
+
+comb_acc_depth <- function(acc_wide, depth) {
+  acc_wide %>% 
+    slice(seq(1, nrow(acc_wide), 10)) %>% #extracts every 10th row
+    mutate(depth = approx(depth$DateTime, depth$Depth, xout = DateTime)$y) %>% 
+    left_join(select(depth, DateTime, Clicking, Buzzing), by = "DateTime") %>% 
+     # mutate(across(c(Clicking, Buzzing), ~ !(is.na(.x) | i))) FIXME LATER
+    drop_na(depth)
+}
+
+ten_hz_asgeir <- comb_acc_depth(acc_wide_asgeir, depth_asgeir)
+ten_hz_balder <- comb_acc_depth(acc_wide_balder, depth_balder)
+                                
 ```
 
 ```{r save}
