@@ -6,22 +6,23 @@
 # x_path, y_path, z_path = name of text file for x,y,z axis acceleration. eg: "name_of_file.txt"
 # nrow = number of rows to read. eg: 10000. Default = Inf
 
-read_acc <- function(x_path, y_path, z_path, nrow = Inf) {
+read_acc <- function(narwhal_id, nrow = Inf) {
   add_sec_frac <- function(time, freq_hz) {
     time + (seq(0, length(time) - 1) %% freq_hz) / freq_hz 
   }
-  read_acc_axis <- function(axis_path, nrow, axis_name){
-    read_tsv(axis_path,
-             col_names = c(axis_name, "drop", "DateTime"), 
-             n_max = nrow) %>%
+  read_acc_axis <- function(axis_path, nrow, axis_name) {
+    map_dfr(axis_path, 
+            read_tsv, 
+            col_names = c(axis_name, "drop", "DateTime"), 
+            n_max = nrow) %>%
       mutate(DateTime = add_sec_frac(mdy_hms(DateTime), 100),# 100 Hz
              {{ axis_name }} := .data[[axis_name]] / 1000) %>% # makes units g
       select(-drop) #removes "%" column
   }
   
-  accx <- read_acc_axis(x_path, nrow, "acc_x")
-  accy <- read_acc_axis(y_path, nrow, "acc_y")
-  accz <- read_acc_axis(z_path, nrow, "acc_z")
+  accx <- read_acc_axis(find_accx(narwhal_id), nrow, "acc_x")
+  accy <- read_acc_axis(find_accy(narwhal_id), nrow, "acc_y")
+  accz <- read_acc_axis(find_accz(narwhal_id), nrow, "acc_z")
   
   # Assert datetimes are all the same
   stopifnot(all(accx$DateTime == accy$DateTime),
