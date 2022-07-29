@@ -1,0 +1,189 @@
+---
+title: "narwhal_BCG"
+author: "Lilah McCormick"
+date: '2022-07-25'
+output: html_document
+---
+```{r load}
+library(tidyverse)
+library(lubridate)
+library(cetaceanbcg)
+source("src/util.R")
+source("src/data.R")
+```
+
+```{r ml_best}
+#reads motionless data from best periods into a dataframe with columns: time_start, time_end, and region_id 
+ml_best_asgeir <- 
+  read_tsv(find_motionless("asgeir")) %>% 
+  filter(meets_criteria == "Y", narwhal_id == "asgeir") %>% 
+  mutate(region_id = row_number()) %>% 
+  select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
+  arrange(time_start)
+```
+
+```{r ml_all}
+ml_all_asgeir <- 
+  read_tsv(find_motionless("asgeir")) %>% 
+  mutate(region_id = row_number()) %>% 
+  select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
+  arrange(time_start)
+```
+
+```{r narwhal-beats}
+#narwhal_beats takes acceleration data, and applies all of the necessary filters, smoothers, and calculations, and returns a df with columns with each of these calculations. 
+#Parameters: 
+#ml_df - a dataframe with time_start, time_end, and region_id as columns 
+#win_s - a number of seconds to calculate the moving averages. 
+#acc_fs - frequency of acceleration data 
+#upper - upper frequency cutoff, should increase with decreasing body size. 
+
+narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
+  
+#should_retain returns a dataframe with a datetime col with all datetimes in acc data, and a column with T/F values. If a datetime in a particular row is found within a motionless period and its buffer, it will have TRUE under retain col for that row. 
+#Parameters:
+#dt - DateTime col of acceleration data
+#motionless - motionless periods dataframe with time_start, time_end, and region_id columns
+#buffer_s - number of seconds that should be added to the motionless period on either end
+  # FIXME!!
+  
+  should_retain <- function(dt, motionless, buffer_s) { 
+    retain <- logical(length(dt)) #retain is a column of T/F values 
+    motionless <- filter(motionless, time_end < max(dt), time_start > min(dt))
+    i_start <- as.numeric(motionless$time_start - buffer_s - dt[1],
+                          unit = "secs") * acc_fs + 1
+    i_end <- as.numeric(motionless$time_end + buffer_s - dt[1],
+                        unit = "secs") * acc_fs + 1
+    retain_idx <- map2(i_start, i_end, ~ .x:.y) %>% 
+      unlist() %>% 
+      pmin(length(dt)) %>% 
+      pmax(1)
+    retain[retain_idx] <- TRUE
+    retain
+  }
+  
+  acc_narwhal %>% 
+    mutate(retain = should_retain(DateTime, ml_df, 2)) %>% 
+    filter(retain) %>% 
+    mutate(
+      timestep = as.numeric(DateTime - lag(DateTime, default = DateTime[1] - acc_fs * 2), 
+                            unit = "secs"),
+      contiguous = abs(timestep - 1 / acc_fs) < 1e-4,
+      contiguous_id = cumsum(!contiguous)
+    ) %>% 
+    group_by(contiguous_id) %>% 
+    mutate(
+      across(acc_x:acc_z, 
+             filter_acc, fs = acc_fs, upper = upper, #applies bandwidth filter
+             .names = "{.col}_filt"),
+      jerk = jerk(cbind(acc_x_filt, acc_y_filt, acc_z_filt), #differencing
+                  fs = acc_fs, p = 4, n = win_s * acc_fs + 1),
+      jerk_se = shannon_entropy(jerk), #shannon entropy
+      jerk_smooth = tma(jerk_se, win_s * acc_fs), #triangular moving average 
+      # Annotate regions
+      rid_left = approx(ml_df$time_start, 
+                        ml_df$region_id, 
+                        DateTime, 
+                        "constant")$y,
+      rid_right = approx(ml_df$time_end, 
+                         ml_df$region_id, 
+                         DateTime, 
+                         "constant", 
+                         yleft = 0)$y + 1,
+      rid = ifelse(rid_left == rid_right, rid_left, NA),
+      # Zero-out signal in non-valid regions (i.e. remove movement artifacts)
+      jerk_smooth = ifelse(is.na(rid), 0, jerk_smooth)
+    ) %>% 
+    ungroup()
+}
+asgeir_acc <- read_acc(find_accx("asgeir"), find_accy("asgeir"), find_accz("asgeir"))
+narwhal_100hz <- narwhal_beats(ml_best_asgeir,
+                               win_s = 2, 
+                               acc_fs = 100, 
+                               upper = 25,
+                               acc_narwhal = asgeir_acc) #should rid = NA in some cases?
+```
+
+
+```{r}
+bcg3d_psd <- with(narwhal_100hz, pspectrum(jerk_smooth[!is.na(rid)], 100)) # i'm getting an error here when I try to do this on ms_asgeir_all 
+
+psd_df <- tibble(
+  freq_hz = bcg3d_psd$freq,
+  spec = bcg3d_psd$spec
+) %>% 
+  mutate(freq_bpm = freq_hz * 60) %>% 
+  filter(freq_bpm <= 50)
+
+signal_rng <- c(10, 20)
+
+signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2]))
+
+psd_s2n <- psd_df %>% 
+  summarize(signal = pracma::trapz(freq_bpm[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]],
+                                   spec[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]]),
+            noise = pracma::trapz(freq_bpm, spec) - signal) %>% 
+  mutate(s2n = signal / noise)
+
+ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
+  geom_area(data = signal_df, fill = "grey80") +
+  geom_path() +
+  annotate("text", 
+           x = mean(signal_rng), 
+           y = max(signal_df$spec) * 1.1, 
+           label = sprintf("S2N=%0.3f", psd_s2n$s2n)) +
+  labs(x = "Frequency (bpm)",
+       y = "Power spectral density") +
+  theme_classic()
+```
+
+
+this is working:  
+```{r calc_s2n}
+#calc_s2n takes in a dataframe (eg. narwhal_100hz), and returns the signal to noise ratio for jerk_smooth for that df, using a signal range of 10 - 20 bpm. 
+#Parameters: 
+#df - a dataframe with columns jerk_smooth and rid. 
+calc_s2n <- function(df){
+  
+  bcg3d_psd <- with(df, pspectrum(jerk_smooth[!is.na(rid)], 100))  #i think this takes narwhal_100hz, and returns a bunch of values associated with psd. It excludes any rows were rid = NA. Specifies that sampling freq is 100 hz. 
+
+psd_df <- tibble( #creates a df with 1 column of frequencies, and another with spec(?) corresponding to those frequencies
+  freq_hz = bcg3d_psd$freq, 
+  spec = bcg3d_psd$spec
+) %>% 
+  mutate(freq_bpm = freq_hz * 60) %>% #adds a 3rd column freq_bpm, which is the frequencies in freq_hz in units of bpm 
+  filter(freq_bpm <= 50) #removes any rows where freq_bpm > 50 bpm, since this is outside the expected range of a narwhal hr. 
+
+
+signal_rng <- c(10, 20) #creates a vector with boundary values considered "signal"
+
+signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2])) #creates a new df with same cols and values from psd_df, but only includes rows in which freq_bpm is between 10 and 20 bpm. 
+
+psd_s2n <- psd_df %>% # creates a df with 3 columns: signal,  noise, and s2n (signal-to-noise-ratio) Values for s2n should be at least > 1. 
+  summarize(signal = pracma::trapz(freq_bpm[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]],
+                                  spec[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]]), #calc signal 
+            noise = pracma::trapz(freq_bpm, spec) - signal) %>% # calc noise
+  mutate(s2n = signal/noise) #add s2n col 
+  psd_s2n$s2n #return s2n
+}
+```
+
+
+```{r}
+quality_check <- function(win_size, upper, narwhal_acc, motionless) {
+  narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>% 
+    calc_s2n()
+}
+
+win_sizes <- c(0.5, 1.0, 1.5, 2.0)
+uppers <- c(10, 15, 20, 25)
+s2ns <- expand_grid(
+  win_size = win_sizes,
+  upper = uppers
+) %>% 
+  mutate(s2n = map2_dbl(win_size, 
+                        upper, 
+                        quality_check, 
+                        narwhal_acc = asgeir_acc,
+                        motionless = ml_best_asgeir))
+```

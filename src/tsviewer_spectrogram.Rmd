@@ -17,19 +17,14 @@ spec.pgram: Explaining the parameters:
 asgeir_10hz_pitch <- readRDS("Asgeir_10hz.rds") %>% #Create df with just t and pitch
   transmute(t = DateTime, 
             pitch = pitch) #should pitch be |pitch|?
-# head <- head(asgeir_10hz_pitch, n =100)
 
 spec <- spec.pgram(asgeir_10hz_pitch, 
-                   spans = 3, #time window is 3 seconds on either side maybe?
+                   spans = 11, #time window is 3 seconds on either side maybe?
                    )
 
 spec_df <- transmute(asgeir_10hz_pitch, 
                      t = t, 
                      freq = spec[["freq"]], 
                      power = spec[["spec"]])
-```
-
-```{r}
-
 ```
 

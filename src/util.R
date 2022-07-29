@@ -68,15 +68,19 @@ roll <- function(y,z) {
 # Parameters: 
 # dataframe - must be a dataframe. 
 # start_time/end_time - must be character strings in 'YYYY-MM-DD hh:mm:ss' format.
-plot_dive <- function(dataframe, start_time, end_time) {
+plot_dive <- function(dataframe, start_time, end_time, title = NULL, interactive = FALSE) {
   one_dive <- filter(dataframe, DateTime >= start_time, DateTime <= end_time)
   dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth)) +
     geom_line() +
     scale_y_reverse() + #makes depth right orientation 
     labs(x = "Time",
-         y = "Depth (m)") + #changes labels on axes and title 
+         y = "Depth (m)",
+         title = title) + #changes labels on axes and title 
     theme_bw()  #white background
-  dive_plot
+  
+  if(interactive == FALSE)
+    dive_plot
+  else ggplotly(dive_plot)
 }
 
 #plot_calculated plots anorm, roll, or pitch. 

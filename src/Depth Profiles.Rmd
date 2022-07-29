@@ -17,13 +17,14 @@ library(tidyverse)
 library(plotly)
 library(DT)
 library(glue)
-source("util.R")
+source("src/util.R")
+source("src/data.R")
 ```
 
 #### Read filed into a dataframe, and make DateTimes compatible with POSIXct
 ```{r = fix_datetimes, message = FALSE, results = FALSE}
-depth_asgeir <- read_depth("Depth_Asgeir.txt")
-depth_balder <- read_depth("Depth_Balder.txt")
+depth_asgeir <- read_depth(find_depth("asgeir"))
+depth_balder <- read_depth(find_depth("balder"))
 ```
 
 #### Dive Profile Plots:  
