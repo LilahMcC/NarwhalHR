@@ -20,10 +20,7 @@ source("src/data.R")
 Does it make sense that these dataframes are exactly the same length? 
 ```{r read_into_wide,  echo = FALSE, message = FALSE}
 #asgeir
-acc_wide_asgeir <- read_acc(find_accx("asgeir"), 
-                     find_accy("asgeir"), 
-                     find_accz("asgeir"), 
-                     nrow = Inf) %>% 
+acc_wide_asgeir <- read_acc("asgeir",  nrow = Inf) %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
          pitch = pitch(acc_x, anorm),
          roll = roll(acc_y, acc_z))
@@ -31,10 +28,7 @@ acc_wide_asgeir <- read_acc(find_accx("asgeir"),
 
 
 #balder
-acc_wide_balder <- read_acc(find_accx("balder"), 
-                     find_accy("balder"), 
-                     find_accz("balder"), 
-                     nrow = Inf) %>% 
+acc_wide_balder <- read_acc("balder",  nrow = Inf) %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
          pitch = pitch(acc_x, anorm),
          roll = roll(acc_y, acc_z))
@@ -45,7 +39,10 @@ acc_wide_balder <- read_acc(find_accx("balder"),
 depth_asgeir <- read_depth(find_depth("asgeir"))          
 ten_hz_asgeir <- acc_wide_asgeir %>% 
   slice(seq(1, nrow(acc_wide_asgeir), 10)) %>%  #extracts every 10th row 
-  mutate(depth = approx(depth_asgeir$DateTime, depth_asgeir$Depth, xout = DateTime)$y)
+  mutate(depth = approx(depth_asgeir$DateTime, depth_asgeir$Depth, xout = DateTime)$y) %>%
+  left_join(select(depth_asgeir, DateTime, Clicking, Buzzing), by = "DateTime") %>% 
+  # mutate(across(c(Clicking, Buzzing), ~ !(is.na(.x) | i))) FIXME LATER
+  drop_na(depth)
 
 #balder
 depth_balder <- read_depth(find_depth("balder"))
@@ -53,13 +50,11 @@ ten_hz_balder <- acc_wide_balder %>%
   slice(seq(1, nrow(acc_wide_balder), 10)) %>%  #extracts every 10th row 
   mutate(depth = approx(depth_asgeir$DateTime, depth_asgeir$Depth, xout = DateTime)$y)
 #this is not working. It returns a depth column with all NA values 
-
-
 ```
 
 ```{r save}
-saveRDS(ten_hz_asgeir, "Asgeir_10hz.rds")
-saveRDS(ten_hz_balder, "Balder_10hz.rds")
+saveRDS(ten_hz_asgeir, "data/derived_data/biologging/Asgeir_10hz.rds")
+saveRDS(ten_hz_balder, "data/derived_data/biologging/Balder_10hz.rds")
 ```
 
 
