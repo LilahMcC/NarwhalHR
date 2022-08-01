@@ -13,18 +13,15 @@ load libraries:
 ```{r load libraries, echo = FALSE, message = FALSE}
 library(tidyverse)
 library(lubridate)
-source("util.R")
+source("src/util.R")
+source("src/data.R")
 ```
  
 ```{r read_into_wide,  echo = FALSE, message = FALSE}
-acc_wide <- read_acc("HDI0_Asgeir.txt", 
-                     "HDJ0_Asgeir.txt", 
-                     "HDK0_Asgeir.txt", 
-                     nrow = 4e6) %>% 
+acc_wide_asgeir <- read_acc("asgeir",  nrow = Inf) %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
          pitch = pitch(acc_x, anorm),
-         roll = roll(acc_y, acc_z))
-
+         roll = roll(acc_y, acc_z)) %>% 
 ```
 
 ```{r pivot_longer, echo = FALSE, message = FALSE}
