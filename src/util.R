@@ -10,8 +10,8 @@ read_acc <- function(narwhal_id, nrow = Inf) {
   add_sec_frac <- function(time, freq_hz) {
     time + (seq(0, length(time) - 1) %% freq_hz) / freq_hz 
   }
-  read_acc_axis <- function(axis_path, nrow, axis_name) {
-    map_dfr(axis_path, 
+  read_acc_axis <- function(narwhal_id, nrow, axis_name) {
+    map_dfr(narwhal_id, 
             read_tsv, 
             col_names = c(axis_name, "drop", "DateTime"), 
             n_max = nrow) %>%
