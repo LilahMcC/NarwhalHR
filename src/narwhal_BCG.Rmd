@@ -27,7 +27,9 @@ ml_all_asgeir <-
   read_tsv(find_motionless("asgeir")) %>% 
   mutate(region_id = row_number()) %>% 
   select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
-  arrange(time_start)
+  arrange(time_start) %>% 
+  # FIXME
+  filter(region_id != 243)
 ```
 
 ```{r narwhal-beats}
@@ -63,7 +65,7 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
   }
   
   acc_narwhal %>% 
-    mutate(retain = should_retain(DateTime, ml_df, 2)) %>% 
+    mutate(retain = should_retain(DateTime, ml_df, win_s + 0.1)) %>% 
     filter(retain) %>% 
     mutate(
       timestep = as.numeric(DateTime - lag(DateTime, default = DateTime[1] - acc_fs * 2), 
@@ -96,8 +98,8 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
     ) %>% 
     ungroup()
 }
-asgeir_acc <- read_acc(find_accx("asgeir"), find_accy("asgeir"), find_accz("asgeir"))
-narwhal_100hz <- narwhal_beats(ml_best_asgeir,
+asgeir_acc <- read_acc("asgeir")
+narwhal_100hz <- narwhal_beats(ml_all_asgeir,
                                win_s = 2, 
                                acc_fs = 100, 
                                upper = 25,
@@ -185,5 +187,5 @@ s2ns <- expand_grid(
                         upper, 
                         quality_check, 
                         narwhal_acc = asgeir_acc,
-                        motionless = ml_best_asgeir))
+                        motionless = ml_all_asgeir))
 ```
