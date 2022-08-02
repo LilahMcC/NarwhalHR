@@ -13,11 +13,11 @@ source("src/data.R")
 ```
 
 ```{r vars}
-narwhal_id <- "asgeir"
+narwhal_id <- "balder"
 win_s <- 2
 acc_fs <- 100
 upper <- 25
-keep_phase <- c("descent")
+keep_phase <- c("descent", "ascent", "subsurface", "surface", "bottom")
 by_criteria <- FALSE
 ```
 
@@ -38,7 +38,7 @@ ml_best <- function(narwhal_id){
 ml_phase <- function(narwhal_id, keep_phase) {
   read_tsv(find_motionless(narwhal_id)) %>% 
     mutate(region_id = row_number()) %>% 
-    filter(all(keep_phase %in% dive_phase) & dive_phase %in% keep_phase) %>% #filter by dive phase 
+    filter(dive_phase %in% keep_phase) %>% #filter by dive phase 
     select(-c(duration, narwhal_id, meets_criteria, dive_phase, notes)) %>% #remove unneeded columns
     arrange(time_start) %>% #order chronologically
     #FIXME 
@@ -130,7 +130,7 @@ narwhal_100hz <- narwhal_beats(ml_filt,
 
 
 ```{r}
-bcg3d_psd <- with(narwhal_100hz, pspectrum(jerk_smooth[!is.na(rid)], 100)) # i'm getting an error here when I try to do this on ms_asgeir_all 
+bcg3d_psd <- with(narwhal_100hz, pspectrum(jerk_smooth[!is.na(rid)], 100)) 
 
 psd_df <- tibble(
   freq_hz = bcg3d_psd$freq,
@@ -194,22 +194,26 @@ calc_s2n <- function(df){
 
 
 ```{r}
-quality_check <- function(win_size, upper, narwhal_acc, motionless) {
-  narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>% 
+quality_check <- function(win_size, upper, dive_phase, narwhal_acc) {
+  motionless <- ml_phase(narwhal_id, dive_phase)
+  narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>%
     calc_s2n()
 }
 
 win_sizes <- c(0.5, 1.0, 1.5, 2.0)
 uppers <- c(10, 15, 20, 25)
+phases <- c("descent", "bottom", "subsurface")
+dive_phase <- map(seq_along(phases), 
+                  ~ combn(phases, .x, simplify = FALSE)) %>% 
+  unlist(recursive = FALSE)
 s2ns <- expand_grid(
-  win_size = win_sizes,
-  upper = uppers
+  win_size = win_sizes[1],
+  upper = uppers[1], 
+  dive_phase
 ) %>% 
-  mutate(s2n = map2_dbl(win_size, 
-                        upper, 
+  mutate(s2n = pmap_dbl(.,
                         quality_check, 
-                        narwhal_acc,
-                        motionless = ml_filt))
+                        narwhal_acc))
 ```
 
 ```{r plot}
@@ -256,5 +260,7 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
   labs(x = "Frequency (bpm)",
        y = "Power spectral density") +
   theme_classic()
+
+#going to want to use facet_wrap, with different plots for each win_s, upper combination 
 ```
 
