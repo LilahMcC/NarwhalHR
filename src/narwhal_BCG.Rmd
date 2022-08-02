@@ -13,11 +13,11 @@ source("src/data.R")
 ```
 
 ```{r vars}
-narwhal_id <- "balder"
+narwhal_id <- "asgeir"
 win_s <- 2
 acc_fs <- 100
 upper <- 25
-keep_phase <- c("descent", "ascent", "subsurface", "surface", "bottom")
+keep_phase <- c("descent", "bottom", "subsurface")
 by_criteria <- FALSE
 ```
 
@@ -194,6 +194,13 @@ calc_s2n <- function(df){
 
 
 ```{r}
+#returns a the s2n ratio for window size, upper limit, and dive phase combination.
+#Parameters 
+#win_size - for all windowed operations (a number)
+#upper limit - a number
+#dive phase - a charater string with col name of dive phase. 
+#narwhal_acc - df with acc x, y, z, and DateTime
+
 quality_check <- function(win_size, upper, dive_phase, narwhal_acc) {
   motionless <- ml_phase(narwhal_id, dive_phase)
   narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>%
