@@ -23,16 +23,21 @@ ml_best_asgeir <-
 ```
 
 ```{r ml_all}
+#filt_ml creates a df with 3 columns (time_start, time_end, and region_id) of  motionless periods, filtered by dive_phase.
+#Parameters
+#narwhal_id - narwhal identification in quotes. eg: "asgeir"
+#keep - a vector of character strings of dive phases to keep in the df. eg: c("bottom", "surface", "subsurface", "descent", "ascent")
+
 filt_ml <- function(narwhal_id, keep) {
   read_tsv(find_motionless(narwhal_id)) %>% 
     mutate(region_id = row_number()) %>% 
-    filter(dive_phase == keep) %>% 
+    filter(all(keep %in% dive_phase) & dive_phase %in% keep) %>% 
     select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
     arrange(time_start) %>% 
     filter(region_id != 243)
 }
-
-ml_all_asgeir <- filt_ml("asgeir", "bottom")
+keep <- c("surface", "ascent")
+ml_filt_asgeir <- filt_ml("asgeir", keep)
 ```
 
 
