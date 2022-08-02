@@ -21,7 +21,7 @@ keep_phase <- c("descent")
 by_criteria <- FALSE
 ```
 
-```{r ml_best}
+```{r filter}
 #reads motionless data from best periods into a dataframe with columns: time_start, time_end, and region_id 
 ml_best <- function(narwhal_id){
   read_tsv(find_motionless(narwhal_id)) %>% 
@@ -35,7 +35,7 @@ ml_best <- function(narwhal_id){
 #Parameters
 #narwhal_id - narwhal identification in quotes. eg: "asgeir"
 #keep_phase - a vector of character strings of dive phases to keep in the df. eg: c("bottom", "surface", "subsurface", "descent", "ascent")
-ml_filt <- function(narwhal_id, keep_phase) {
+ml_phase <- function(narwhal_id, keep_phase) {
   read_tsv(find_motionless(narwhal_id)) %>% 
     mutate(region_id = row_number()) %>% 
     filter(all(keep_phase %in% dive_phase) & dive_phase %in% keep_phase) %>% #filter by dive phase 
@@ -46,15 +46,15 @@ ml_filt <- function(narwhal_id, keep_phase) {
 }
 ```
 
-```{r}
+```{r ml_df}
 if(by_criteria){
-  ml_asgeir <- ml_best(narwhal_id)
+  ml_filt <- ml_best(narwhal_id)
 }else{
-    ml_asgeir <- ml_filt(narwhal_id, keep_phase)
+    ml_filt <- ml_phase(narwhal_id, keep_phase)
 }
 ```
 
-```{r narwhal-beats}
+```{r narwhal_beats}
 #narwhal_beats takes acceleration data, and applies all of the necessary filters, smoothers, and calculations, and returns a df with columns with each of these calculations. 
 #Parameters: 
 #ml_df - a dataframe with time_start, time_end, and region_id as columns 
@@ -120,12 +120,12 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
     ) %>% 
     ungroup()
 }
-asgeir_acc <- read_acc("asgeir")
-narwhal_100hz <- narwhal_beats(ml_all_asgeir,
-                               win_s = 2,
-                               acc_fs = 100,
-                               upper = 25,
-                               acc_narwhal = asgeir_acc) #should rid = NA in some cases?
+narwhal_acc <- read_acc(narwhal_id)
+narwhal_100hz <- narwhal_beats(ml_filt,
+                               win_s,
+                               acc_fs,
+                               upper,
+                               narwhal_acc) #should rid = NA in some cases?
 ```
 
 
@@ -208,8 +208,8 @@ s2ns <- expand_grid(
   mutate(s2n = map2_dbl(win_size, 
                         upper, 
                         quality_check, 
-                        narwhal_acc = asgeir_acc,
-                        motionless = ml_filt_asgeir))
+                        narwhal_acc,
+                        motionless = ml_filt))
 ```
 
 ```{r plot}
@@ -257,3 +257,4 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
        y = "Power spectral density") +
   theme_classic()
 ```
+
