@@ -23,13 +23,28 @@ ml_best_asgeir <-
 ```
 
 ```{r ml_all}
-ml_all_asgeir <- 
-  read_tsv(find_motionless("asgeir")) %>% 
-  mutate(region_id = row_number()) %>% 
-  select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
-  arrange(time_start) %>% 
-  # FIXME
-  filter(region_id != 243)
+filt_ml <- function(narwhal_id, keep) {
+  read_tsv(find_motionless(narwhal_id)) %>% 
+    mutate(region_id = row_number()) %>% 
+    filter(dive_phase == keep) %>% 
+    select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
+    arrange(time_start) %>% 
+    filter(region_id != 243)
+}
+
+ml_all_asgeir <- filt_ml("asgeir", "bottom")
+```
+
+
+```{r ml_all}
+
+# ml_all_asgeir <- 
+#   read_tsv(find_motionless("asgeir")) %>% 
+#   mutate(region_id = row_number()) %>% 
+#   select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
+#   arrange(time_start) %>% 
+#   # FIXME
+#   filter(region_id != 243)
 ```
 
 ```{r narwhal-beats}
@@ -100,8 +115,8 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
 }
 asgeir_acc <- read_acc("asgeir")
 narwhal_100hz <- narwhal_beats(ml_all_asgeir,
-                               win_s = 2, 
-                               acc_fs = 100, 
+                               win_s = 2,
+                               acc_fs = 100,
                                upper = 25,
                                acc_narwhal = asgeir_acc) #should rid = NA in some cases?
 ```
@@ -140,7 +155,6 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
 ```
 
 
-this is working:  
 ```{r calc_s2n}
 #calc_s2n takes in a dataframe (eg. narwhal_100hz), and returns the signal to noise ratio for jerk_smooth for that df, using a signal range of 10 - 20 bpm. 
 #Parameters: 
