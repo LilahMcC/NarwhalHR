@@ -166,6 +166,8 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
 #calc_s2n takes in a dataframe (eg. narwhal_100hz), and returns the signal to noise ratio for jerk_smooth for that df, using a signal range of 10 - 20 bpm. 
 #Parameters: 
 #df - a dataframe with columns jerk_smooth and rid. 
+#verbose - boolean. If TRUE, will return a list with items psd_df, and s2n. If false, will return just s2n. 
+
 calc_s2n <- function(df, verbose = FALSE) {
   
   bcg3d_psd <- with(df, pspectrum(jerk_smooth[!is.na(rid)], 100))  #i think this takes narwhal_100hz, and returns a bunch of values associated with psd. It excludes any rows were rid = NA. Specifies that sampling freq is 100 hz. 
@@ -207,18 +209,33 @@ calc_s2n <- function(df, verbose = FALSE) {
 #upper limit - a number
 #dive phase - a charater string with col name of dive phase. 
 #narwhal_acc - df with acc x, y, z, and DateTime
+#plots - boolean, when TRUE, creates a saves a plot of psd for each dive_phase, win_size, upper combination
 
-quality_check <- function(win_size, upper, dive_phase, narwhal_acc, plots = FALSE) {
+quality_check <- function(win_size, upper, dive_phase, narwhal_acc, plots = TRUE) {
   motionless <- ml_phase(narwhal_id, dive_phase)
   narwhal_s2n <- narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>%
     calc_s2n(verbose = plots)
+  
   if(plots) {
     # use narwhal_s2n$psd_df to create and save the figure
-    plot_path <- file.path("figures", "s2n", glue::glue())
-    s2n_plot <- ggplot(narwhal_s2n$psd_df, aes(...)) +
-      geom_line(...) +
-      geom_area(...)
-    ggsave(s2n_plot)
+    plot_path <- file.path("figures", "s2n", glue::glue("{narwhal_id}_{dive_phase}_{win_size}_{upper}.jpeg"))
+    cat(plot_path)
+    signal_rng <- c(10, 20) #creates a vector with boundary values considered "signal"
+    signal_df <- filter(narwhal_s2n$psd_df, between(freq_bpm, signal_rng[1], signal_rng[2]))
+    
+    s2n_plot <- ggplot(narwhal_s2n$psd_df,
+                       aes(x = freq_bpm, y = spec)) +
+      geom_area(data = signal_df, fill = "grey80") +
+      geom_path() +
+      annotate("text", 
+               x = mean(signal_rng), 
+               y = max(signal_df$spec) * 1.1, 
+               label = sprintf("S2N=%0.3f", narwhal_s2n$s2n)) +
+      labs(x = "Frequency (bpm)",
+           y = "Power spectral density") +
+      theme_classic()
+    
+    ggsave(plot_path, s2n_plot,device="jpeg")
     
     narwhal_s2n$s2n
   } else {
@@ -233,60 +250,12 @@ dive_phase <- map(seq_along(phases),
                   ~ combn(phases, .x, simplify = FALSE)) %>% 
   unlist(recursive = FALSE)
 s2ns <- expand_grid(
-  win_size = win_sizes,
-  upper = uppers, 
+  win_size = win_sizes[1],
+  upper = uppers[1], 
   dive_phase
 ) %>% 
   mutate(s2n = pmap_dbl(.,
                         quality_check, 
                         narwhal_acc))
-```
-
-```{r plot}
-#FIXME
-
-#calc_s2n takes in a dataframe (eg. narwhal_100hz), and returns the signal to noise ratio for jerk_smooth for that df, using a signal range of 10 - 20 bpm. 
-#Parameters: 
-#df - a dataframe with columns jerk_smooth and rid. 
-calc_s2n <- function(df){
-  
-  bcg3d_psd <- with(df, pspectrum(jerk_smooth[!is.na(rid)], 100))  #i think this takes narwhal_100hz, and returns a bunch of values associated with psd. It excludes any rows were rid = NA. Specifies that sampling freq is 100 hz. 
-  
-  psd_df <- tibble( #creates a df with 1 column of frequencies, and another with spec(?) corresponding to those frequencies
-    freq_hz = bcg3d_psd$freq, 
-    spec = bcg3d_psd$spec
-  ) %>% 
-    mutate(freq_bpm = freq_hz * 60) %>% #adds a 3rd column freq_bpm, which is the frequencies in freq_hz in units of bpm 
-    filter(freq_bpm <= 50) #removes any rows where freq_bpm > 50 bpm, since this is outside the expected range of a narwhal hr. 
-  
-  
-  signal_rng <- c(10, 20) #creates a vector with boundary values considered "signal"
-  
-  signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2])) #creates a new df with same cols and values from psd_df, but only includes rows in which freq_bpm is between 10 and 20 bpm. 
-  
-  psd_s2n <- psd_df %>% # creates a df with 3 columns: signal,  noise, and s2n (signal-to-noise-ratio) Values for s2n should be at least > 1. 
-    summarize(signal = pracma::trapz(freq_bpm[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]],
-                                     spec[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]]), #calc signal 
-              noise = pracma::trapz(freq_bpm, spec) - signal) %>% # calc noise
-    mutate(s2n = signal/noise) #add s2n col 
-  return_vec <- c(psd_df, signal_df)
-  return_vec
-  
-}
-s2n_vals <- calc_s2n(narwhal_100hz)
-psd_df <- s2n_vals[1]
-signal_df <- s2n_vals[2]
-ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
-  geom_area(data = signal_df, fill = "grey80") +
-  geom_path() +
-  annotate("text", 
-           x = mean(signal_rng), 
-           y = max(signal_df$spec) * 1.1, 
-           label = sprintf("S2N=%0.3f", psd_s2n$s2n)) +
-  labs(x = "Frequency (bpm)",
-       y = "Power spectral density") +
-  theme_classic()
-
-#going to want to use facet_wrap, with different plots for each win_s, upper combination 
 ```
 
