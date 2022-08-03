@@ -166,7 +166,7 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
 #calc_s2n takes in a dataframe (eg. narwhal_100hz), and returns the signal to noise ratio for jerk_smooth for that df, using a signal range of 10 - 20 bpm. 
 #Parameters: 
 #df - a dataframe with columns jerk_smooth and rid. 
-calc_s2n <- function(df){
+calc_s2n <- function(df, verbose = FALSE) {
   
   bcg3d_psd <- with(df, pspectrum(jerk_smooth[!is.na(rid)], 100))  #i think this takes narwhal_100hz, and returns a bunch of values associated with psd. It excludes any rows were rid = NA. Specifies that sampling freq is 100 hz. 
   
@@ -187,8 +187,15 @@ calc_s2n <- function(df){
                                      spec[freq_bpm >= signal_rng[1] & freq_bpm <= signal_rng[2]]), #calc signal 
               noise = pracma::trapz(freq_bpm, spec) - signal) %>% # calc noise
     mutate(s2n = signal/noise) #add s2n col 
-  psd_s2n$s2n
   
+  if(verbose) {
+    list(
+      psd_df = psd_df, 
+      s2n = psd_s2n$s2n
+    )
+  } else {
+    psd_s2n$s2n
+  }
 }
 ```
 
@@ -201,10 +208,22 @@ calc_s2n <- function(df){
 #dive phase - a charater string with col name of dive phase. 
 #narwhal_acc - df with acc x, y, z, and DateTime
 
-quality_check <- function(win_size, upper, dive_phase, narwhal_acc) {
+quality_check <- function(win_size, upper, dive_phase, narwhal_acc, plots = FALSE) {
   motionless <- ml_phase(narwhal_id, dive_phase)
-  narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>%
-    calc_s2n()
+  narwhal_s2n <- narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>%
+    calc_s2n(verbose = plots)
+  if(plots) {
+    # use narwhal_s2n$psd_df to create and save the figure
+    plot_path <- file.path("figures", "s2n", glue::glue())
+    s2n_plot <- ggplot(narwhal_s2n$psd_df, aes(...)) +
+      geom_line(...) +
+      geom_area(...)
+    ggsave(s2n_plot)
+    
+    narwhal_s2n$s2n
+  } else {
+    narwhal_s2n
+  }
 }
 
 win_sizes <- c(0.5, 1.0, 1.5, 2.0)
@@ -214,8 +233,8 @@ dive_phase <- map(seq_along(phases),
                   ~ combn(phases, .x, simplify = FALSE)) %>% 
   unlist(recursive = FALSE)
 s2ns <- expand_grid(
-  win_size = win_sizes[1],
-  upper = uppers[1], 
+  win_size = win_sizes,
+  upper = uppers, 
   dive_phase
 ) %>% 
   mutate(s2n = pmap_dbl(.,
