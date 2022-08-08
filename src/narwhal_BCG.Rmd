@@ -8,6 +8,7 @@ output: html_document
 library(tidyverse)
 library(lubridate)
 library(cetaceanbcg)
+library(ggplot2)
 source("src/util.R")
 source("src/data.R")
 ```
@@ -16,8 +17,8 @@ source("src/data.R")
 narwhal_id <- "asgeir"
 win_s <- 2
 acc_fs <- 100
-upper <- 25
-keep_phase <- c("descent", "bottom", "subsurface")
+upper <- 35
+keep_phase <- c("descent")
 by_criteria <- FALSE
 ```
 
@@ -31,7 +32,7 @@ ml_best <- function(narwhal_id){
   arrange(time_start)
 }
 
-#filt_ml creates a df with 3 columns (time_start, time_end, and region_id) of  motionless periods, filtered by dive_phase.
+#ml_phase creates a df with 3 columns (time_start, time_end, and region_id) of  motionless periods, filtered by dive_phase.
 #Parameters
 #narwhal_id - narwhal identification in quotes. eg: "asgeir"
 #keep_phase - a vector of character strings of dive phases to keep in the df. eg: c("bottom", "surface", "subsurface", "descent", "ascent")
@@ -40,16 +41,16 @@ ml_phase <- function(narwhal_id, keep_phase) {
     mutate(region_id = row_number()) %>% 
     filter(dive_phase %in% keep_phase) %>% #filter by dive phase 
     select(-c(duration, narwhal_id, meets_criteria, dive_phase, notes)) %>% #remove unneeded columns
-    arrange(time_start) %>% #order chronologically
+    arrange(time_start) #%>% order chronologically
     #FIXME 
-    filter(region_id != 243) 
+    # filter(region_id != 243) 
 }
 ```
 
 ```{r ml_df}
-if(by_criteria){
+if(by_criteria) {
   ml_filt <- ml_best(narwhal_id)
-}else{
+} else {
     ml_filt <- ml_phase(narwhal_id, keep_phase)
 }
 ```
@@ -127,7 +128,6 @@ narwhal_100hz <- narwhal_beats(ml_filt,
                                upper,
                                narwhal_acc) #should rid = NA in some cases?
 ```
-
 
 ```{r}
 bcg3d_psd <- with(narwhal_100hz, pspectrum(jerk_smooth[!is.na(rid)], 100)) 
@@ -257,5 +257,36 @@ s2ns <- expand_grid(
   mutate(s2n = pmap_dbl(.,
                         quality_check, 
                         narwhal_acc))
+```
+
+```{r waveform_plot}
+#FIXME
+narwhal_100hz_new <- narwhal_100hz %>% 
+  filter(rid == 2) %>% #select 1 ml period 
+  subset(select = -c(retain, timestep, contiguous, contiguous_id, rid, rid_left, rid_right)) %>% 
+  pivot_longer(!DateTime, names_to = "wave_type", values_to = "value")
+
+  narwhal_100hz_new <- pivot_longer(narwhal_100hz_new, cols = value[,1]:value[,3], names_to = "wave_type", values_to = "value") #having trouble getting this to pivot_longer
+  
+waveform_plot <- ggplot(narwhal_100hz_new, aes(x = "DateTime", y = "jerk_se")) + 
+  geom_line()
+
+waveform_plot
+
+```
+
+```{r s2ns_plot}
+s2n_df <- filter(readRDS("data/derived_data/asgeir_s2ns.rds"), dive_phase == "descent")
+s2ns_plot <- ggplot(s2n_df, aes(x = upper, y = s2n, color = factor(win_size), group = win_size)) + 
+  geom_line(size = 1) +
+  geom_point(size = 3) + 
+  theme(rect = element_blank()) +
+  labs(x = "upper cutoff frequency", 
+       y = "signal / noise", 
+       color = "window size") +
+  guides(color = guide_legend(override.aes = list(shape = 16))) + #this line isn't working 
+  scale_color_brewer(palette = "Paired")
+
+s2ns_plot
 ```
 
