@@ -50,3 +50,40 @@ plot_dive(depth_balder, start_dep_balder, end_dep_balder, "Balder Dive Profile 2
 ```
 
 
+```{r plot_dive_phases}
+start_time <- ymd_hms('2016-08-24 20:43:13')
+end_time <- ymd_hms('2016-08-24 21:02:20')
+one_dive <- filter(depth_balder, DateTime >= start_time, DateTime <= end_time)
+
+start_1 <- ymd_hms('2016-08-24 20:43:13')
+end_1 <- ymd_hms('2016-08-24 20:45:23')
+surface <- filter(depth_balder, DateTime >= start_1, DateTime <= end_1)
+
+start_2 <- ymd_hms('2016-08-24 20:45:23')
+end_2 <- ymd_hms('2016-08-24 21:02:20')
+descent <- filter(depth_balder, DateTime >= start_2, DateTime <= end_2)
+
+phase <- c("surface", "descent")
+times <- c(surface, descent)
+phase_times <- data.frame(dive_phase = phase, start_time = c(start_1, start_2), end_time = c(end_1, end_2))
+
+one_dive$color <- apply(one_dive, 
+                  1, 
+                  FUN = function(x) if(x[4] >= start_1 & x[4] <= end_1) 0 else 1) #not working the way I want it to 
+         
+
+dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color)) +
+  geom_line() +
+  scale_y_reverse() + #makes depth right orientation 
+  labs(x = "Time",
+       y = "Depth (m)") + #changes labels on axes and title 
+  theme(line = element_blank(), 
+        rect = element_blank(), 
+        text = element_text(size = 16),
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank()
+        )  #white background
+
+dive_plot
+```
+
