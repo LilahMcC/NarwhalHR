@@ -46,7 +46,7 @@ plot_dive(depth_asgeir, start_dive, end_dive, "Asgeir Dive Profile Single Dive A
 ```{r plot_balder_depth, echo = FALSE, messages = FALSE}
 start_dep_balder <- 	depth_balder$DateTime[1]
 end_dep_balder <- depth_balder$DateTime[nrow(depth_balder)]
-plot_dive(depth_balder, start_dep_balder, end_dep_balder, "Balder Dive Profile 2018 Deployment")
+plot_dive(depth_balder, start_time, end_time, "Balder Dive Profile 2018 Deployment", TRUE)
 ```
 
 
@@ -55,22 +55,32 @@ start_time <- ymd_hms('2016-08-24 20:43:13')
 end_time <- ymd_hms('2016-08-24 21:02:20')
 one_dive <- filter(depth_balder, DateTime >= start_time, DateTime <= end_time)
 
-start_1 <- ymd_hms('2016-08-24 20:43:13')
-end_1 <- ymd_hms('2016-08-24 20:45:23')
-surface <- filter(depth_balder, DateTime >= start_1, DateTime <= end_1)
+sur_start <- ymd_hms('2016-08-24 20:43:13')
+sur_end <- ymd_hms('2016-08-24 20:45:23')
 
-start_2 <- ymd_hms('2016-08-24 20:45:23')
-end_2 <- ymd_hms('2016-08-24 21:02:20')
-descent <- filter(depth_balder, DateTime >= start_2, DateTime <= end_2)
+des_start <- ymd_hms('2016-08-24 20:45:23')
+des_end <- ymd_hms('2016-08-24 20:49:16')
 
-phase <- c("surface", "descent")
-times <- c(surface, descent)
-phase_times <- data.frame(dive_phase = phase, start_time = c(start_1, start_2), end_time = c(end_1, end_2))
+bot_start <- ymd_hms('2016-08-24 20:49:16')
+bot_end <- ymd_hms('2016-08-24 20:51:03')
 
-one_dive$color <- apply(one_dive, 
-                  1, 
-                  FUN = function(x) if(x[4] >= start_1 & x[4] <= end_1) 0 else 1) #not working the way I want it to 
-         
+asc_start <- ymd_hms('2016-08-24 20:51:03')
+asc_end <- ymd_hms('2016-08-24 20:55:47')
+
+sur_start_1 <- ymd_hms('2016-08-24 20:55:47')
+sur_end_1 <- ymd_hms('2016-08-24 20:57:58')
+
+sub_start <- ymd_hms('2016-08-24 20:57:58')
+sub_end <- ymd_hms('2016-08-24 21:01:09')
+  
+sur_start_2 <- ymd_hms('2016-08-24 21:01:09')
+sur_end_2 <- ymd_hms('2016-08-24 21:02:20')
+
+one_dive$color <- with(one_dive, 
+                       ifelse(DateTime > des_start & DateTime <= des_end, "descent",
+                              ifelse(DateTime > bot_start & DateTime <= bot_end, "bottom",
+                                     ifelse(DateTime > asc_start & DateTime <= asc_end, "ascent",
+                                            ifelse(DateTime > sub_start & DateTime <= sub_end, "subsurface", "surface")))))
 
 dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color)) +
   geom_line() +
