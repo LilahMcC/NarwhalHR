@@ -83,7 +83,7 @@ one_dive$color <- with(one_dive,
                                             ifelse(DateTime > sub_start & DateTime <= sub_end, "subsurface", "surface")))))
 
 dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color)) +
-  geom_line() +
+  geom_line(size = 2) +
   scale_y_reverse() + #makes depth right orientation 
   labs(x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
