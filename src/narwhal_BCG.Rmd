@@ -87,6 +87,7 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
     retain[retain_idx] <- TRUE 
     retain 
   }
+
   
   acc_narwhal %>% 
     mutate(retain = should_retain(DateTime, ml_df, win_s + 0.1)) %>% 
@@ -114,8 +115,9 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
       rid_right = approx(ml_df$time_end, 
                          ml_df$region_id, 
                          DateTime, 
-                         "constant", 
-                         yleft = 0)$y + 1,
+                         "constant",
+                         f = 1,
+                         rule = 2)$y,
       rid = ifelse(rid_left == rid_right, rid_left, NA),
       # Zero-out signal in non-valid regions (i.e. remove movement artifacts)
       jerk_smooth = ifelse(is.na(rid), 0, jerk_smooth)
@@ -216,7 +218,6 @@ quality_check <- function(win_size, upper, dive_phase, narwhal_acc, plots = FALS
   motionless <- ml_phase(narwhal_id, dive_phase) #filters ml df down to desired dive_phase
   narwhal_s2n <- narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>% #runs narwhal_beats on acc file for specified ml periods. 
     calc_s2n(verbose = plots) #calculates s2n and if plots = TRUE, returns psd_df and s2n. if FALSE just returns s2n
-  
   if(plots) {
     # use narwhal_s2n$psd_df to create and save the figure
     plot_path <- file.path("figures", "s2n", glue::glue("{narwhal_id}_{dive_phase}_{win_size}_{upper}.jpeg")) #specifies file path 
@@ -259,7 +260,7 @@ s2ns <- expand_grid(
                         quality_check, 
                         narwhal_acc))
 #FIXME getting error message: 'ts' object must have one or more observations in balder 
-#getting error message "missing balues in object" for asgeir
+#getting error message "missing values in object" for asgeir
 ```
 
 ```{r waveform_plot}
