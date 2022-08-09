@@ -18,6 +18,6 @@ balder_10hz <- readRDS(find_10hz("balder"))
 
 
 ```{r launch}
-#run_tsviewer(asgeir_10hz, "asgeir")
-run_tsviewer(balder_10hz, "balder") 
+# run_tsviewer(asgeir_10hz, "asgeir")
+run_tsviewer(balder_10hz, "balder")
 ```
