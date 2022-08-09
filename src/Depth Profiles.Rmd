@@ -81,9 +81,8 @@ one_dive$color <- with(one_dive,
                               ifelse(DateTime > bot_start & DateTime <= bot_end, "bottom",
                                      ifelse(DateTime > asc_start & DateTime <= asc_end, "ascent",
                                             ifelse(DateTime > sub_start & DateTime <= sub_end, "subsurface", "surface")))))
-#this is assigning surface to green the whole deployment - how do I fix this 
 
-dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color)) +
+dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color, group = 1)) +
   geom_line(size = 2) +
   scale_y_reverse() + #makes depth right orientation 
   labs(x = "Time",
