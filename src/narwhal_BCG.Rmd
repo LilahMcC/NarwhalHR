@@ -14,20 +14,20 @@ source("src/data.R")
 ```
 
 ```{r vars}
-narwhal_id <- "asgeir"
+narwhal_id <- "balder"
 win_s <- 2
 acc_fs <- 100
 upper <- 35
-keep_phase <- c("descent")
+keep_phase <- c("descent", "bottom", "subsurface")
 by_criteria <- FALSE
 ```
 
 ```{r filter}
-#reads motionless data from best periods into a dataframe with columns: time_start, time_end, and region_id 
+#reads motionless data from best (>60 s total bottom time per dive) periods into a dataframe with columns: time_start, time_end, and region_id 
 ml_best <- function(narwhal_id){
   read_tsv(find_motionless(narwhal_id)) %>% 
   filter(meets_criteria == "Y") %>% 
-  mutate(region_id = row_number()) %>% 
+  mutate(region_id = row_number()) %>% #add rid col
   select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
   arrange(time_start)
 }
@@ -38,7 +38,7 @@ ml_best <- function(narwhal_id){
 #keep_phase - a vector of character strings of dive phases to keep in the df. eg: c("bottom", "surface", "subsurface", "descent", "ascent")
 ml_phase <- function(narwhal_id, keep_phase) {
   read_tsv(find_motionless(narwhal_id)) %>% 
-    mutate(region_id = row_number()) %>% 
+    mutate(region_id = row_number()) %>% #add rid col 
     filter(dive_phase %in% keep_phase) %>% #filter by dive phase 
     select(-c(duration, narwhal_id, meets_criteria, dive_phase, notes)) %>% #remove unneeded columns
     arrange(time_start) #%>% order chronologically
@@ -48,6 +48,7 @@ ml_phase <- function(narwhal_id, keep_phase) {
 ```
 
 ```{r ml_df}
+#filter the ml data into a smaller dataframe based on desired dive phases. 
 if(by_criteria) {
   ml_filt <- ml_best(narwhal_id)
 } else {
@@ -62,6 +63,7 @@ if(by_criteria) {
 #win_s - a number of seconds to calculate the moving averages. 
 #acc_fs - frequency of acceleration data 
 #upper - upper frequency cutoff, should increase with decreasing body size. 
+#acc_narwhal - triaxial acc df 
 
 narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
   
@@ -70,21 +72,20 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
 #dt - DateTime col of acceleration data
 #motionless - motionless periods dataframe with time_start, time_end, and region_id columns
 #buffer_s - number of seconds that should be added to the motionless period on either end
-  # FIXME!!
-  
+
   should_retain <- function(dt, motionless, buffer_s) { 
     retain <- logical(length(dt)) #retain is a column of T/F values 
-    motionless <- filter(motionless, time_end < max(dt), time_start > min(dt))
+    motionless <- filter(motionless, time_end < max(dt), time_start > min(dt)) #make sure the ml and acc df are the same length 
     i_start <- as.numeric(motionless$time_start - buffer_s - dt[1],
-                          unit = "secs") * acc_fs + 1
+                          unit = "secs") * acc_fs + 1 
     i_end <- as.numeric(motionless$time_end + buffer_s - dt[1],
                         unit = "secs") * acc_fs + 1
-    retain_idx <- map2(i_start, i_end, ~ .x:.y) %>% 
+    retain_idx <- map2(i_start, i_end, ~ .x:.y) %>% #keep periods inside ml durations plus a buffer
       unlist() %>% 
       pmin(length(dt)) %>% 
       pmax(1)
-    retain[retain_idx] <- TRUE
-    retain
+    retain[retain_idx] <- TRUE 
+    retain 
   }
   
   acc_narwhal %>% 
@@ -92,7 +93,7 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
     filter(retain) %>% 
     mutate(
       timestep = as.numeric(DateTime - lag(DateTime, default = DateTime[1] - acc_fs * 2), 
-                            unit = "secs"),
+                            unit = "secs"), 
       contiguous = abs(timestep - 1 / acc_fs) < 1e-4,
       contiguous_id = cumsum(!contiguous)
     ) %>% 
@@ -129,7 +130,7 @@ narwhal_100hz <- narwhal_beats(ml_filt,
                                narwhal_acc) #should rid = NA in some cases?
 ```
 
-```{r}
+```{r s2n_plot_once}
 bcg3d_psd <- with(narwhal_100hz, pspectrum(jerk_smooth[!is.na(rid)], 100)) 
 
 psd_df <- tibble(
@@ -170,7 +171,7 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
 
 calc_s2n <- function(df, verbose = FALSE) {
   
-  bcg3d_psd <- with(df, pspectrum(jerk_smooth[!is.na(rid)], 100))  #i think this takes narwhal_100hz, and returns a bunch of values associated with psd. It excludes any rows were rid = NA. Specifies that sampling freq is 100 hz. 
+  bcg3d_psd <- with(df, pspectrum(jerk_smooth[!is.na(rid)], 100))  #i think this takes narwhal_100hz, and returns a bunch of values associated with psd. It excludes any rows were rid = NA. 
   
   psd_df <- tibble( #creates a df with 1 column of frequencies, and another with spec(?) corresponding to those frequencies
     freq_hz = bcg3d_psd$freq, 
@@ -190,12 +191,12 @@ calc_s2n <- function(df, verbose = FALSE) {
               noise = pracma::trapz(freq_bpm, spec) - signal) %>% # calc noise
     mutate(s2n = signal/noise) #add s2n col 
   
-  if(verbose) {
+  if(verbose) { #if verbose = TRUE, return psd_df and s2n
     list(
       psd_df = psd_df, 
       s2n = psd_s2n$s2n
     )
-  } else {
+  } else { #if verbose = FALSE, just return s2n 
     psd_s2n$s2n
   }
 }
@@ -206,39 +207,39 @@ calc_s2n <- function(df, verbose = FALSE) {
 #returns a the s2n ratio for window size, upper limit, and dive phase combination.
 #Parameters 
 #win_size - for all windowed operations (a number)
-#upper limit - a number
+#upper frequency cutoff - a number
 #dive phase - a charater string with col name of dive phase. 
 #narwhal_acc - df with acc x, y, z, and DateTime
 #plots - boolean, when TRUE, creates a saves a plot of psd for each dive_phase, win_size, upper combination
 
-quality_check <- function(win_size, upper, dive_phase, narwhal_acc, plots = TRUE) {
-  motionless <- ml_phase(narwhal_id, dive_phase)
-  narwhal_s2n <- narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>%
-    calc_s2n(verbose = plots)
+quality_check <- function(win_size, upper, dive_phase, narwhal_acc, plots = FALSE) {
+  motionless <- ml_phase(narwhal_id, dive_phase) #filters ml df down to desired dive_phase
+  narwhal_s2n <- narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>% #runs narwhal_beats on acc file for specified ml periods. 
+    calc_s2n(verbose = plots) #calculates s2n and if plots = TRUE, returns psd_df and s2n. if FALSE just returns s2n
   
   if(plots) {
     # use narwhal_s2n$psd_df to create and save the figure
-    plot_path <- file.path("figures", "s2n", glue::glue("{narwhal_id}_{dive_phase}_{win_size}_{upper}.jpeg"))
+    plot_path <- file.path("figures", "s2n", glue::glue("{narwhal_id}_{dive_phase}_{win_size}_{upper}.jpeg")) #specifies file path 
     cat(plot_path)
     signal_rng <- c(10, 20) #creates a vector with boundary values considered "signal"
     signal_df <- filter(narwhal_s2n$psd_df, between(freq_bpm, signal_rng[1], signal_rng[2]))
     
     s2n_plot <- ggplot(narwhal_s2n$psd_df,
                        aes(x = freq_bpm, y = spec)) +
-      geom_area(data = signal_df, fill = "grey80") +
+      geom_area(data = signal_df, fill = "grey80") + #fills in area under curve considered signal 
       geom_path() +
       annotate("text", 
                x = mean(signal_rng), 
                y = max(signal_df$spec) * 1.1, 
-               label = sprintf("S2N=%0.3f", narwhal_s2n$s2n)) +
+               label = sprintf("S2N=%0.3f", narwhal_s2n$s2n)) + #prints s2n value on plot
       labs(x = "Frequency (bpm)",
            y = "Power spectral density") +
       theme_classic()
     
-    ggsave(plot_path, s2n_plot,device="jpeg")
+    ggsave(plot_path, s2n_plot,device="jpeg") #save the plot
     
     narwhal_s2n$s2n
-  } else {
+  } else { #if plots = FALSE then just return narwhal_s2n 
     narwhal_s2n
   }
 }
@@ -257,25 +258,31 @@ s2ns <- expand_grid(
   mutate(s2n = pmap_dbl(.,
                         quality_check, 
                         narwhal_acc))
+#FIXME getting error message: 'ts' object must have one or more observations in balder 
+#getting error message "missing balues in object" for asgeir
 ```
 
 ```{r waveform_plot}
-#FIXME
-narwhal_100hz_new <- narwhal_100hz %>% 
+#FIXME trying to make a plot like the one in the BCG paper, with the waveform after different filters are applied. Having trouble getting the table to pivot_longer. Says object "value" not found.
+
+one_ml <- narwhal_100hz %>% 
   filter(rid == 2) %>% #select 1 ml period 
   subset(select = -c(retain, timestep, contiguous, contiguous_id, rid, rid_left, rid_right)) %>% 
   pivot_longer(!DateTime, names_to = "wave_type", values_to = "value")
 
-  narwhal_100hz_new <- pivot_longer(narwhal_100hz_new, cols = value[,1]:value[,3], names_to = "wave_type", values_to = "value") #having trouble getting this to pivot_longer
+  one_ml <- pivot_longer(one_ml, cols = value[,1]:value[,3], names_to = "wave_type", values_to = "value") #having trouble getting this to pivot_longer
   
-waveform_plot <- ggplot(narwhal_100hz_new, aes(x = "DateTime", y = "jerk_se")) + 
+waveform_plot <- ggplot(one_ml, aes(x = "DateTime", y = "jerk_se")) + 
   geom_line()
 
 waveform_plot
 
+
 ```
 
 ```{r s2ns_plot}
+#plots s2n values for different win_s, uppers for a single dive phase combo. Not a super interesting plot in its current state. 
+
 s2n_df <- filter(readRDS("data/derived_data/asgeir_s2ns.rds"), dive_phase == "descent")
 s2ns_plot <- ggplot(s2n_df, aes(x = upper, y = s2n, color = factor(win_size), group = win_size)) + 
   geom_line(size = 1) +
@@ -284,7 +291,7 @@ s2ns_plot <- ggplot(s2n_df, aes(x = upper, y = s2n, color = factor(win_size), gr
   labs(x = "upper cutoff frequency", 
        y = "signal / noise", 
        color = "window size") +
-  guides(color = guide_legend(override.aes = list(shape = 16))) + #this line isn't working 
+  guides(color = guide_legend(override.aes = list(shape = 16))) + #FIXME want to make the legend just circles without the line through them 
   scale_color_brewer(palette = "Paired")
 
 s2ns_plot
