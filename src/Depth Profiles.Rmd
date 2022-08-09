@@ -72,15 +72,16 @@ sur_end_1 <- ymd_hms('2016-08-24 20:57:58')
 
 sub_start <- ymd_hms('2016-08-24 20:57:58')
 sub_end <- ymd_hms('2016-08-24 21:01:09')
-  
+
 sur_start_2 <- ymd_hms('2016-08-24 21:01:09')
 sur_end_2 <- ymd_hms('2016-08-24 21:02:20')
 
-one_dive$color <- with(one_dive, 
+one_dive$color <- with(one_dive, #assign dive phases to different time periods
                        ifelse(DateTime > des_start & DateTime <= des_end, "descent",
                               ifelse(DateTime > bot_start & DateTime <= bot_end, "bottom",
                                      ifelse(DateTime > asc_start & DateTime <= asc_end, "ascent",
-                                            ifelse(DateTime > sub_start & DateTime <= sub_end, "subsurface", "surface")))))
+                                            ifelse(DateTime > sub_start & DateTime <= sub_end, "subsurface", "surface"))))) %>% 
+  factor(c("surface", "descent", "bottom", "ascent", "subsurface")) #reorder dive_phase legen labels to be in order of first appearance 
 
 dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color, group = 1)) +
   geom_line(size = 2) +
@@ -93,9 +94,9 @@ dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color, group 
         axis.text.x = element_blank(), 
         axis.text.y = element_blank(), 
         legend.title = element_blank()
-        ) + 
+  ) + 
   scale_color_brewer(palette = "Set2")
-
+#FIXME the lines look very jagged, happened when we added group = 1. 
 dive_plot
 ```
 
