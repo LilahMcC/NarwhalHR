@@ -1,0 +1,73 @@
+---
+title: "bcg_plots"
+author: "Lilah McCormick"
+date: "2022-08-10"
+output: html_document
+---
+
+```{r}
+source("src/data.R")
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+balder_bcg <- readRDS(find_BCG("balder")) %>% 
+  filter(rid == "251") 
+```
+
+```{r filtered_acc}
+filt_acc <- balder_bcg %>% 
+  select("DateTime", "acc_x_filt", "acc_y_filt", "acc_z_filt") %>% 
+  pivot_longer(
+    cols = acc_x_filt:acc_z_filt, 
+    names_to = "axis",
+    values_to = "acc_filt"
+  )
+
+
+filt_acc_plot <- ggplot(filt_acc, aes(x = DateTime, y = acc_filt, color = axis)) +
+  geom_line() +
+  facet_wrap(vars(axis), 
+             nrow = 3) +
+  theme(legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        line = element_blank(), 
+        rect = element_blank(), 
+        axis.text.y = element_blank()) + 
+  labs(x = "time",
+       y = "filtered acceleration"
+  )
+
+
+filt_acc_plot
+```
+
+```{r differenced_acc}
+diff_acc <- balder_bcg %>% 
+  mutate(jerk_x = jerk[,1], jerk_y = jerk[,2], jerk_z = jerk[,3]) %>% 
+  select(DateTime, jerk_x, jerk_y, jerk_z) %>% 
+  pivot_longer(
+    cols = jerk_x:jerk_z, 
+    names_to = "axis",
+    values_to = "acc_diff"
+  )
+
+diff_acc_plot <- ggplot(diff_acc, aes(x = DateTime, y = acc_diff, color = axis)) +
+  geom_line() +
+  facet_wrap(vars(axis), 
+             nrow = 3) +
+  theme(legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        line = element_blank(), 
+        rect = element_blank(), 
+        axis.text.y = element_blank()) + 
+  labs(x = "time",
+       y = "differenced acceleration"
+  )
+
+diff_acc_plot
+```
+
