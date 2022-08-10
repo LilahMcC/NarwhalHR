@@ -71,3 +71,41 @@ diff_acc_plot <- ggplot(diff_acc, aes(x = DateTime, y = acc_diff, color = axis))
 diff_acc_plot
 ```
 
+```{r se}
+se <- balder_bcg %>% 
+  select(DateTime, jerk_se)
+
+se_plot <- ggplot(se, aes(x = DateTime, y = jerk_se)) +
+  geom_line() +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank(),
+        line = element_blank(), 
+        rect = element_blank(), 
+        axis.text.y = element_blank()) + 
+  labs(x = "time",
+       y = "shannon entropy"
+  )
+
+se_plot
+```
+
+```{r smooth}
+smooth <- balder_bcg %>% 
+  select(DateTime, jerk_smooth)
+
+smooth_plot <- ggplot(smooth, aes(x = DateTime, y = jerk_smooth)) +
+  geom_line() +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank(),
+        line = element_blank(), 
+        rect = element_blank(), 
+        axis.text.y = element_blank()) + 
+  labs(x = "time",
+       y = "smoothed signal"
+  )
+
+smooth_plot
+
+#FIXME this looks seriously wrong
+```
+
