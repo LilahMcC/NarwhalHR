@@ -9,6 +9,7 @@ output: html_document
 source("src/data.R")
 library(tidyverse)
 library(ggplot2)
+library(gridExtra)
 ```
 
 ```{r}
@@ -109,3 +110,7 @@ smooth_plot
 #FIXME this looks seriously wrong
 ```
 
+```{r arrange}
+grid.arrange(filt_acc_plot, diff_acc_plot, se_plot, smooth_plot, 
+             nrow = 4)
+```
