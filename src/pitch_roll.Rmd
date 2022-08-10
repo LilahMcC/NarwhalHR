@@ -81,15 +81,21 @@ pra_plot <- ggplot(pra_ml, aes(x = DateTime, y = value, color = ml, group = 1)) 
   geom_line() +
   facet_wrap(vars(metric), nrow = 3, scales = "free", strip.position = "left") +
   theme(line = element_blank(), 
-        text = element_text(size = 12),
-        axis.text.y = element_blank() 
-  ) +
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_blank(),
+        axis.title.x = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        strip.text.y = element_text(size = 16),
+        panel.background = element_rect(fill = "#F5F5F5", colour = "#F5F5F5")) +
   labs(x = "time(s)", 
-       y = NULL) +
-  scale_color_manual(values = c("#A6D854", "#FC8D62"))
+       y = NULL, 
+       color = NULL) +
+  scale_color_manual(values = c("808080", "#E78AC3"))
                      
 pra_plot
-                     ```
+
+ggsave("figures/static_period.jpg", pra_plot, device="jpeg", width = 10, height = 7)
+```
                      
                      
                      
