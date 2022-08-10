@@ -83,8 +83,17 @@ one_dive$color <- with(one_dive, #assign dive phases to different time periods
                                             ifelse(DateTime > sub_start & DateTime <= sub_end, "subsurface", "surface"))))) %>% 
   factor(c("surface", "descent", "bottom", "ascent", "subsurface")) #reorder dive_phase legen labels to be in order of first appearance 
 
+# %>% 
+#   mutate(phase = case_when(
+#     cond1 ~ phase1,
+#     ...,
+#     condn ~ phasen
+#   ),
+#   phase = factor(phase, levels = c(...)))
+
 dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color, group = 1)) +
-  geom_line(size = 2) +
+# dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color)) +
+  geom_line(size = 1.2) +
   scale_y_reverse() + #makes depth right orientation 
   labs(x = "Time",
        y = "Depth (m)") + #changes labels on axes and title 
@@ -95,8 +104,10 @@ dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color, group 
         axis.text.y = element_blank(), 
         legend.title = element_blank()
   ) + 
-  scale_color_brewer(palette = "Set2")
-#FIXME the lines look very jagged, happened when we added group = 1. 
+  scale_color_manual(values = c("#A6D854", "#FC8D62", "#77CCFF", "#E78AC3", "#8DA0CB")) 
+  #scale_color_brewer(palette = "Set2")
 dive_plot
+
+#ggsave("figures/balder_dive_phases_fig.jpg", dive_plot, device="jpeg", width = 10, height = 7)
 ```
 
