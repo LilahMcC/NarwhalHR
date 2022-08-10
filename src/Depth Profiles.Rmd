@@ -53,7 +53,6 @@ plot_dive(depth_balder, start_time, end_time, "Balder Dive Profile 2018 Deployme
 ```{r plot_dive_phases}
 start_time <- ymd_hms('2016-08-24 20:43:13')
 end_time <- ymd_hms('2016-08-24 21:02:20')
-one_dive <- filter(depth_balder, DateTime >= start_time, DateTime <= end_time)
 
 sur_start <- ymd_hms('2016-08-24 20:43:13')
 sur_end <- ymd_hms('2016-08-24 20:45:23')
@@ -76,23 +75,19 @@ sub_end <- ymd_hms('2016-08-24 21:01:09')
 sur_start_2 <- ymd_hms('2016-08-24 21:01:09')
 sur_end_2 <- ymd_hms('2016-08-24 21:02:20')
 
-one_dive$color <- with(one_dive, #assign dive phases to different time periods
-                       ifelse(DateTime > des_start & DateTime <= des_end, "descent",
-                              ifelse(DateTime > bot_start & DateTime <= bot_end, "bottom",
-                                     ifelse(DateTime > asc_start & DateTime <= asc_end, "ascent",
-                                            ifelse(DateTime > sub_start & DateTime <= sub_end, "subsurface", "surface"))))) %>% 
-  factor(c("surface", "descent", "bottom", "ascent", "subsurface")) #reorder dive_phase legen labels to be in order of first appearance 
+one_dive <- filter(depth_balder, DateTime >= start_time, DateTime <= end_time) %>% 
+  mutate(phase = case_when( #assign a dive phase to each time point 
+    DateTime > des_start & DateTime <= des_end ~ "descent",
+    DateTime > bot_start & DateTime <= bot_end ~ "bottom", 
+    DateTime > asc_start & DateTime <= asc_end ~ "ascent",
+    DateTime > sub_start & DateTime <= sub_end ~ "subsurface",
+    (DateTime >= sur_start & DateTime <= sur_end) |
+      (DateTime > sur_start_1 & DateTime <= sur_end_1) |
+      (DateTime > sur_start_2 & DateTime <= sur_end_2)  ~ "surface"
+  ), 
+  phase = factor(phase, levels = c("surface", "descent", "bottom", "ascent", "subsurface"))) #reorder the dive phases in the plot legend 
 
-# %>% 
-#   mutate(phase = case_when(
-#     cond1 ~ phase1,
-#     ...,
-#     condn ~ phasen
-#   ),
-#   phase = factor(phase, levels = c(...)))
-
-dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color, group = 1)) +
-# dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color)) +
+dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = phase, group = 1)) +
   geom_line(size = 1.2) +
   scale_y_reverse() + #makes depth right orientation 
   labs(x = "Time",
@@ -104,10 +99,9 @@ dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = color, group 
         axis.text.y = element_blank(), 
         legend.title = element_blank()
   ) + 
-  scale_color_manual(values = c("#A6D854", "#FC8D62", "#77CCFF", "#E78AC3", "#8DA0CB")) 
-  #scale_color_brewer(palette = "Set2")
+  scale_color_manual(values = c("#A6D854", "#FC8D62", "#77CCFF", "#E78AC3", "#8DA0CB")) #choose color scheme
 dive_plot
 
-#ggsave("figures/balder_dive_phases_fig.jpg", dive_plot, device="jpeg", width = 10, height = 7)
+ggsave("figures/balder_dive_phases.jpg", dive_plot, device="jpeg", width = 10, height = 7)
 ```
 
