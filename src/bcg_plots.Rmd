@@ -6,10 +6,11 @@ output: html_document
 ---
 
 ```{r}
-source("src/data.R")
-library(tidyverse)
-library(ggplot2)
-library(gridExtra)
+# source("src/data.R")
+# library(tidyverse)
+# library(ggplot2)
+# library(gridExtra)
+# library(stringr)
 ```
 
 ```{r}
@@ -36,9 +37,10 @@ filt_acc_plot <- ggplot(filt_acc, aes(x = DateTime, y = acc_filt, color = axis))
         strip.text = element_blank(),
         line = element_blank(), 
         rect = element_blank(), 
-        axis.text.y = element_blank()) + 
+        axis.text.y = element_blank(),
+        axis.title.y = element_text(size = 8)) + 
   labs(x = "time",
-       y = "filtered acceleration"
+       y = str_wrap("filtered acceleration", 10)
   )
 
 
@@ -63,10 +65,11 @@ diff_acc_plot <- ggplot(diff_acc, aes(x = DateTime, y = acc_diff, color = axis))
         strip.background = element_blank(),
         strip.text = element_blank(),
         line = element_blank(), 
-        rect = element_blank(), 
+        rect = element_blank(),
+        axis.title.y = element_text(size = 8),
         axis.text.y = element_blank()) + 
   labs(x = "time",
-       y = "differenced acceleration"
+       y = str_wrap("differenced acceleration", 10)
   )
 
 diff_acc_plot
@@ -82,9 +85,10 @@ se_plot <- ggplot(se, aes(x = DateTime, y = jerk_se)) +
         strip.text = element_blank(),
         line = element_blank(), 
         rect = element_blank(), 
-        axis.text.y = element_blank()) + 
+        axis.text.y = element_blank(),
+        axis.title.y = element_text(size = 8)) + 
   labs(x = "time",
-       y = "shannon entropy"
+       y = str_wrap("shannon entropy", 10)
   )
 
 se_plot
@@ -100,9 +104,10 @@ smooth_plot <- ggplot(smooth, aes(x = DateTime, y = jerk_smooth)) +
         strip.text = element_blank(),
         line = element_blank(), 
         rect = element_blank(), 
-        axis.text.y = element_blank()) + 
+        axis.text.y = element_blank(),
+        axis.title.y = element_text(size = 8)) + 
   labs(x = "time",
-       y = "smoothed signal"
+       y = str_wrap("smoothed signal", 10)
   )
 
 smooth_plot
@@ -111,6 +116,11 @@ smooth_plot
 ```
 
 ```{r arrange}
-grid.arrange(filt_acc_plot, diff_acc_plot, se_plot, smooth_plot, 
-             nrow = 4)
+bcg_plots <- list(filt_acc_plot, diff_acc_plot, se_plot, smooth_plot) %>% map(~.x + labs(x=NULL))
+
+bcg_plot_comb <- grid.arrange(grobs = bcg_plots, 
+             nrow = 4, 
+             bottom = "time (s)")
+
+#ggsave("figures/balder_bcg_plots.jpg", bcg_plot_comb, device="jpeg", width = 10, height = 7)
 ```
