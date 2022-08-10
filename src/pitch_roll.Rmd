@@ -16,20 +16,26 @@ library(lubridate)
 source("src/util.R")
 source("src/data.R")
 ```
- 
+
 ```{r read_into_wide,  echo = FALSE, message = FALSE}
 acc_wide_asgeir <- read_acc("asgeir",  nrow = Inf) %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
          pitch = pitch(acc_x, anorm),
-         roll = roll(acc_y, acc_z)) %>% 
+         roll = roll(acc_y, acc_z)) 
 ```
 
 ```{r pivot_longer, echo = FALSE, message = FALSE}
-acc_long <- acc_wide %>% 
+acc_long <- acc_wide_asgeir %>% 
   subset(select = c(DateTime, acc_x, acc_y, acc_z)) %>% 
   pivot_longer(!DateTime, 
                names_to = "axis", 
                values_to = "acc")
+
+pra_long <- acc_wide_asgeir %>% 
+  subset(select = c(DateTime, pitch, roll, anorm)) %>% 
+  pivot_longer(!DateTime, 
+               names_to = "metric", 
+               values_to = "value")
 ```
 
 plot figures: 
@@ -57,4 +63,34 @@ plot_acc(acc_long, start_time, end_time)
 ```
 
 
+```{r plot_tsviewer window}
+#make a plot with time on x axis, and pitch, roll and anorm on y axis using facetwrap
+start_plot <- ymd_hms('2018-08-27 15:42:20')
+start_ml <- ymd_hms('2018-08-27 15:42:30')
+end_ml <- ymd_hms('2018-08-27 15:42:45')
+end_plot <- ymd_hms('2018-08-27 15:42:55')
 
+pra_ml <- pra_long %>% 
+  filter(DateTime >= start_plot, DateTime <= end_plot) %>% 
+  mutate(ml = case_when( #assign a dive phase to each time point 
+    DateTime <= start_ml | DateTime > end_ml ~ "movement",
+    DateTime > start_ml & DateTime <= end_ml ~ "static"))
+
+
+pra_plot <- ggplot(pra_ml, aes(x = DateTime, y = value, color = ml, group = 1)) +
+  geom_line() +
+  facet_wrap(vars(metric), nrow = 3, scales = "free", strip.position = "left") +
+  theme(line = element_blank(), 
+        text = element_text(size = 12),
+        axis.text.y = element_blank() 
+  ) +
+  labs(x = "time(s)", 
+       y = NULL) +
+  scale_color_manual(values = c("#A6D854", "#FC8D62"))
+                     
+pra_plot
+                     ```
+                     
+                     
+                     
+                     
