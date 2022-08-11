@@ -15,10 +15,10 @@ source("src/data.R")
 
 ```{r vars}
 narwhal_id <- "balder"
-win_s <- 2
+win_s <- 2.0
 acc_fs <- 100
-upper <- 35
-keep_phase <- c("descent", "bottom", "subsurface")
+upper <- 30
+keep_phase <- "subsurface"
 by_criteria <- FALSE
 ```
 
@@ -88,7 +88,6 @@ narwhal_beats <- function(ml_df, win_s, acc_fs, upper, acc_narwhal) {
     retain 
   }
 
-  
   acc_narwhal %>% 
     mutate(retain = should_retain(DateTime, ml_df, win_s + 0.1)) %>% 
     filter(retain) %>% 
@@ -142,7 +141,13 @@ psd_df <- tibble(
   mutate(freq_bpm = freq_hz * 60) %>% 
   filter(freq_bpm <= 50)
 
-signal_rng <- c(10, 20)
+signal_rng <- case_when(
+  keep_phase == "descent" ~ c(10, 30), #should i change this back to 10-20
+  keep_phase == "subsurface" ~ c(50, 70), 
+  keep_phase == "bottom" ~ c(5, 15), 
+  keep_phase == "surface" ~ c(50, 70), 
+  keep_phase == "ascent" ~ c(10, 30)
+)
 
 signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2]))
 
@@ -152,7 +157,7 @@ psd_s2n <- psd_df %>%
             noise = pracma::trapz(freq_bpm, spec) - signal) %>% 
   mutate(s2n = signal / noise)
 
-ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
+s2n_plot <- ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
   geom_area(data = signal_df, fill = "grey80") +
   geom_path() +
   annotate("text", 
@@ -162,6 +167,8 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
   labs(x = "Frequency (bpm)",
        y = "Power spectral density") +
   theme_classic()
+
+s2n_plot
 ```
 
 
@@ -172,7 +179,6 @@ ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
 #verbose - boolean. If TRUE, will return a list with items psd_df, and s2n. If false, will return just s2n. 
 
 calc_s2n <- function(df, verbose = FALSE) {
-  
   bcg3d_psd <- with(df, pspectrum(jerk_smooth[!is.na(rid)], 100))  #i think this takes narwhal_100hz, and returns a bunch of values associated with psd. It excludes any rows were rid = NA. 
   
   psd_df <- tibble( #creates a df with 1 column of frequencies, and another with spec(?) corresponding to those frequencies
@@ -183,7 +189,12 @@ calc_s2n <- function(df, verbose = FALSE) {
     filter(freq_bpm <= 50) #removes any rows where freq_bpm > 50 bpm, since this is outside the expected range of a narwhal hr. 
   
   
-  signal_rng <- c(10, 20) #creates a vector with boundary values considered "signal"
+  signal_rng <- case_when(
+  keep_phase == "descent" ~ c(10, 30),
+  keep_phase == "subsurface" ~ c(50, 70), 
+  keep_phase == "bottom" ~ c(5, 15), 
+  keep_phase == "surface" ~ c(50, 70), 
+  keep_phase == "ascent" ~ c(10, 30))
   
   signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2])) #creates a new df with same cols and values from psd_df, but only includes rows in which freq_bpm is between 10 and 20 bpm. 
   
@@ -215,7 +226,7 @@ calc_s2n <- function(df, verbose = FALSE) {
 #plots - boolean, when TRUE, creates a saves a plot of psd for each dive_phase, win_size, upper combination
 
 quality_check <- function(win_size, upper, dive_phase, narwhal_acc, plots = FALSE) {
-  motionless <- ml_phase(narwhal_id, dive_phase) #filters ml df down to desired dive_phase
+  motionless <- ml_phase(narwhal_id, dive_phase)  #filters ml df down to desired dive_phase
   narwhal_s2n <- narwhal_beats(motionless, win_size, acc_fs = 100, upper, narwhal_acc) %>% #runs narwhal_beats on acc file for specified ml periods. 
     calc_s2n(verbose = plots) #calculates s2n and if plots = TRUE, returns psd_df and s2n. if FALSE just returns s2n
   if(plots) {
@@ -246,39 +257,16 @@ quality_check <- function(win_size, upper, dive_phase, narwhal_acc, plots = FALS
 }
 
 win_sizes <- c(0.5, 1.0, 1.5, 2.0)
-uppers <- c(10, 15, 20, 25)
-phases <- c("descent", "bottom", "subsurface")
-dive_phase <- map(seq_along(phases), 
-                  ~ combn(phases, .x, simplify = FALSE)) %>% 
-  unlist(recursive = FALSE)
+uppers <- c(10, 15, 20, 25, 30)
+dive_phase <- keep_phase
 s2ns <- expand_grid(
-  win_size = win_sizes[1],
-  upper = uppers[1], 
-  dive_phase
+  win_size = win_sizes,
+  upper = uppers, 
+  dive_phase = dive_phase
 ) %>% 
   mutate(s2n = pmap_dbl(.,
                         quality_check, 
                         narwhal_acc))
-#FIXME getting error message: 'ts' object must have one or more observations in balder 
-#getting error message "missing values in object" for asgeir
-```
-
-```{r waveform_plot}
-#FIXME trying to make a plot like the one in the BCG paper, with the waveform after different filters are applied. Having trouble getting the table to pivot_longer. Says object "value" not found.
-
-one_ml <- narwhal_100hz %>% 
-  filter(rid == 2) %>% #select 1 ml period 
-  subset(select = -c(retain, timestep, contiguous, contiguous_id, rid, rid_left, rid_right)) %>% 
-  pivot_longer(!DateTime, names_to = "wave_type", values_to = "value")
-
-  one_ml <- pivot_longer(one_ml, cols = value[,1]:value[,3], names_to = "wave_type", values_to = "value") #having trouble getting this to pivot_longer
-  
-waveform_plot <- ggplot(one_ml, aes(x = "DateTime", y = "jerk_se")) + 
-  geom_line()
-
-waveform_plot
-
-
 ```
 
 ```{r s2ns_plot}
