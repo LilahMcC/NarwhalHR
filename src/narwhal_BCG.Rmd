@@ -190,11 +190,11 @@ calc_s2n <- function(df, verbose = FALSE) {
   
   
   signal_rng <- case_when(
-  keep_phase == "descent" ~ c(10, 30),
-  keep_phase == "subsurface" ~ c(50, 70), 
-  keep_phase == "bottom" ~ c(5, 15), 
-  keep_phase == "surface" ~ c(50, 70), 
-  keep_phase == "ascent" ~ c(10, 30))
+  keep_phase == "descent" | 
+    keep_phase == "bottom" |
+    keep_phase == "ascent" ~ c(5, 25),
+  keep_phase == "subsurface" ~ c(50, 70), #look into this 
+  keep_phase == "surface" ~ c(50, 70))
   
   signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2])) #creates a new df with same cols and values from psd_df, but only includes rows in which freq_bpm is between 10 and 20 bpm. 
   
