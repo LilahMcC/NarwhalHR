@@ -11,6 +11,7 @@ library(tidyverse)
 library(ggplot2)
 library(gridExtra)
 library(stringr)
+library(DT)
 ```
 
 ```{r}
@@ -127,13 +128,12 @@ bcg_plot_comb <- grid.arrange(grobs = bcg_plots,
 ```
 
 ```{r s2n table}
-s2ns <- readRDS("data/derived_data/asgeir_s2ns.rds") %>% 
-  group_by(dive_phase) %>% 
-  slice_max(s2n) %>% 
+max_s2ns <- as_tibble(readRDS("data/derived_data/balder_s2ns_bottom_0515.rds")) %>% 
+  slice_max(s2n, n = 10) %>% 
   rename("window size" = win_size, "upper frequency cutoff" = upper, "dive phase" = dive_phase, "signal/noise" = s2n)
 
-#FIXME having trouble getting multiple dive phases to appear outside mention of a list
 
-print(s2ns)
+datatable(max_s2ns, caption = "Signal to Noise Ratios - Balder")
+
 ```
 
