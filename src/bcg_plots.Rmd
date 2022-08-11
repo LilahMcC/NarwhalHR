@@ -6,11 +6,11 @@ output: html_document
 ---
 
 ```{r}
-# source("src/data.R")
-# library(tidyverse)
-# library(ggplot2)
-# library(gridExtra)
-# library(stringr)
+source("src/data.R")
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(stringr)
 ```
 
 ```{r}
@@ -38,7 +38,7 @@ filt_acc_plot <- ggplot(filt_acc, aes(x = DateTime, y = acc_filt, color = axis))
         line = element_blank(), 
         rect = element_blank(), 
         axis.text.y = element_blank(),
-        axis.title.y = element_text(size = 8)) + 
+        axis.title.y = element_text(size = 12)) + 
   labs(x = "time",
        y = str_wrap("filtered acceleration", 10)
   )
@@ -66,7 +66,7 @@ diff_acc_plot <- ggplot(diff_acc, aes(x = DateTime, y = acc_diff, color = axis))
         strip.text = element_blank(),
         line = element_blank(), 
         rect = element_blank(),
-        axis.title.y = element_text(size = 8),
+        axis.title.y = element_text(size = 12),
         axis.text.y = element_blank()) + 
   labs(x = "time",
        y = str_wrap("differenced acceleration", 10)
@@ -86,7 +86,7 @@ se_plot <- ggplot(se, aes(x = DateTime, y = jerk_se)) +
         line = element_blank(), 
         rect = element_blank(), 
         axis.text.y = element_blank(),
-        axis.title.y = element_text(size = 8)) + 
+        axis.title.y = element_text(size = 12)) + 
   labs(x = "time",
        y = str_wrap("shannon entropy", 10)
   )
@@ -105,12 +105,13 @@ smooth_plot <- ggplot(smooth, aes(x = DateTime, y = jerk_smooth)) +
         line = element_blank(), 
         rect = element_blank(), 
         axis.text.y = element_blank(),
-        axis.title.y = element_text(size = 8)) + 
+        axis.title.y = element_text(size = 12)) + 
   labs(x = "time",
        y = str_wrap("smoothed signal", 10)
   )
 
 smooth_plot
+
 
 #FIXME this looks seriously wrong
 ```
@@ -124,3 +125,15 @@ bcg_plot_comb <- grid.arrange(grobs = bcg_plots,
 
 #ggsave("figures/balder_bcg_plots.jpg", bcg_plot_comb, device="jpeg", width = 10, height = 7)
 ```
+
+```{r s2n table}
+s2ns <- readRDS("data/derived_data/asgeir_s2ns.rds") %>% 
+  group_by(dive_phase) %>% 
+  slice_max(s2n) %>% 
+  rename("window size" = win_size, "upper frequency cutoff" = upper, "dive phase" = dive_phase, "signal/noise" = s2n)
+
+#FIXME having trouble getting multiple dive phases to appear outside mention of a list
+
+print(s2ns)
+```
+
