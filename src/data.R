@@ -42,3 +42,10 @@ find_10hz <- function(narwhal_id) {
       full.names = TRUE, 
       ignore.case = TRUE)
 }
+
+find_BCG <- function(narwhal_id) {
+  dir("data/derived_data/biologging/", 
+      pattern = sprintf("%s_BCG.rds", narwhal_id), 
+      full.names = TRUE, 
+      ignore.case = TRUE)
+}
