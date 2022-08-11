@@ -11,7 +11,7 @@ library(tidyverse)
 library(ggplot2)
 library(gridExtra)
 library(stringr)
-library(DT)
+library(knitr)
 ```
 
 ```{r}
@@ -130,10 +130,15 @@ bcg_plot_comb <- grid.arrange(grobs = bcg_plots,
 ```{r s2n table}
 max_s2ns <- as_tibble(readRDS("data/derived_data/balder_s2ns_bottom_0515.rds")) %>% 
   slice_max(s2n, n = 10) %>% 
+  relocate(dive_phase) %>% 
   rename("window size" = win_size, "upper frequency cutoff" = upper, "dive phase" = dive_phase, "signal/noise" = s2n)
 
 
-datatable(max_s2ns, caption = "Signal to Noise Ratios - Balder")
+
+library(kableExtra)
+kable(max_s2ns, table.attr = "style='width:150%;'") %>%
+  kable_styling("striped", full_width = T)
+
 
 ```
 
