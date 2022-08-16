@@ -16,10 +16,13 @@ library(knitr)
 
 ```{r}
 balder_bcg <- readRDS(find_BCG("balder")) %>% 
-  filter(rid == "251") 
+  filter(rid == "251") %>% 
+  slice(100:2500) #cuts down data to 24 seconds 
+
 ```
 
 ```{r filtered_acc}
+#FIXME need to fix x axis time ticks 
 filt_acc <- balder_bcg %>% 
   select("DateTime", "acc_x_filt", "acc_y_filt", "acc_z_filt") %>% 
   pivot_longer(
@@ -39,7 +42,8 @@ filt_acc_plot <- ggplot(filt_acc, aes(x = DateTime, y = acc_filt, color = axis))
         line = element_blank(), 
         rect = element_blank(), 
         axis.text.y = element_blank(),
-        axis.title.y = element_text(size = 12)) + 
+        axis.title.y = element_text(size = 20), 
+        axis.title.x = element_text(size = 20)) + 
   labs(x = "time",
        y = str_wrap("filtered acceleration", 10)
   )
@@ -67,8 +71,9 @@ diff_acc_plot <- ggplot(diff_acc, aes(x = DateTime, y = acc_diff, color = axis))
         strip.text = element_blank(),
         line = element_blank(), 
         rect = element_blank(),
-        axis.title.y = element_text(size = 12),
-        axis.text.y = element_blank()) + 
+        axis.title.y = element_text(size = 20),
+        axis.text.y = element_blank(), 
+        axis.title.x = element_text(size = 20)) + 
   labs(x = "time",
        y = str_wrap("differenced acceleration", 10)
   )
@@ -87,7 +92,8 @@ se_plot <- ggplot(se, aes(x = DateTime, y = jerk_se)) +
         line = element_blank(), 
         rect = element_blank(), 
         axis.text.y = element_blank(),
-        axis.title.y = element_text(size = 12)) + 
+        axis.title.y = element_text(size = 20), 
+        axis.title.x = element_text(size = 20)) + 
   labs(x = "time",
        y = str_wrap("shannon entropy", 10)
   )
@@ -106,14 +112,15 @@ smooth_plot <- ggplot(smooth, aes(x = DateTime, y = jerk_smooth)) +
         line = element_blank(), 
         rect = element_blank(), 
         axis.text.y = element_blank(),
-        axis.title.y = element_text(size = 12)) + 
+        axis.title.y = element_text(size = 20), 
+        axis.title.x = element_text(size = 20)) + 
   labs(x = "time",
        y = str_wrap("smoothed signal", 10)
   )
 
 smooth_plot
 
-
+ggsave("figures/balder_bcg_smooth.jpg", smooth_plot, device = "jpeg", width = 15, height = 3)
 #FIXME this looks seriously wrong
 ```
 
@@ -122,9 +129,9 @@ bcg_plots <- list(filt_acc_plot, diff_acc_plot, se_plot, smooth_plot) %>% map(~.
 
 bcg_plot_comb <- grid.arrange(grobs = bcg_plots, 
              nrow = 4, 
-             bottom = "time (s)")
+             bottom = textGrob("time(s)", gp=gpar(fontsize=20)))
 
-#ggsave("figures/balder_bcg_plots.jpg", bcg_plot_comb, device="jpeg", width = 10, height = 7)
+ggsave("figures/balder_bcg_plots_poster.jpg", bcg_plot_comb, device="jpeg", width = 10, height = 7)
 ```
 
 ```{r s2n table}
