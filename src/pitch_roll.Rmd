@@ -80,24 +80,42 @@ pra_ml <- pra_long %>%
 pra_plot <- ggplot(pra_ml, aes(x = DateTime, y = value, color = ml, group = 1)) +
   geom_line() +
   facet_wrap(vars(metric), nrow = 3, scales = "free", strip.position = "left") +
-  theme(line = element_blank(), 
+  theme(line = element_blank(),
         axis.text.x = element_text(size = 12),
         axis.text.y = element_blank(),
         axis.title.x = element_text(size = 16),
         legend.text = element_text(size = 16),
         strip.text.y = element_text(size = 16),
         panel.background = element_rect(fill = "#F5F5F5", colour = "#F5F5F5")) +
-  labs(x = "time(s)", 
-       y = NULL, 
+  labs(x = "time(s)",
+       y = NULL,
        color = NULL) +
   scale_color_manual(values = c("808080", "#E78AC3"))
                      
+# Poster Figure Modifications: 
+# pra_ml$metric[pra_ml$metric == "anorm"] <- "acceleration"
+# 
+# pra_plot <- ggplot(pra_ml, aes(x = DateTime, y = value, color = ml, group = 1)) +
+#   geom_line() +
+#   facet_wrap(vars(metric), nrow = 3, scales = "free", strip.position = "left") +
+#   theme(line = element_blank(), 
+#         axis.text.x = element_text(size = 12),
+#         axis.text.y = element_blank(),
+#         axis.title.x = element_text(size = 28),
+#         legend.position = "none",
+#         strip.text.y = element_text(size = 28),
+#         panel.background = element_rect(fill = "#F5F5F5", colour = "#F5F5F5")) +
+#   labs(x = "time(s)", 
+#        y = NULL, 
+#        color = NULL) +
+#   scale_color_manual(values = c("808080", "#E78AC3"))
+
 pra_plot
 
-#ggsave("figures/static_period.jpg", pra_plot, device="jpeg", width = 10, height = 7)
+ggsave("figures/static_period_poster.jpg", pra_plot, device="jpeg", width = 10, height = 7)
 ```
                      
-```{r bottom_plot}
+```{r bottom_plot_nar}
 bot_start <- ymd_hms('2018-08-25 22:07:43') 
 bot_end <- ymd_hms('2018-08-25 22:10:54')
 
@@ -118,7 +136,7 @@ pra_bot_plot <- ggplot(pra_bottom, aes(x = DateTime, y = value)) +
   
 pra_bot_plot
 
-ggsave("figures/asgeir_pra_bottom.jpg", dev = "jpeg", width = 10, height = 6)
+ggsave("figures/asgeir_pra_bottom.jpg", dev = "jpeg", width = 10, height = 7)
 
 ```
 
