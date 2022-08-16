@@ -1,0 +1,62 @@
+---
+title: "blue_plots"
+author: "Lilah McCormick"
+date: "2022-08-16"
+output: html_document
+---
+```{r}
+library(lubridate)
+library(tidyverse)
+library(plotly)
+library(dplyr)
+library(DT)
+library(glue)
+library(tsviewer)
+source("src/util.R")
+source("src/data.R")
+library(cetaceanbcg)
+```
+
+```{r read}
+acc_blue <- bw180905_53_10hz %>% 
+  mutate(acc_x = aw[,1], acc_y = aw[,2], acc_z = aw[,3], .keep = "unused") %>% 
+  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
+         pitch = pitch(acc_x, anorm),
+         roll = roll(acc_y, acc_z)) %>% 
+  select(-c(starts_with("gw"))) %>% 
+  rename("DateTime" = "dt")
+
+pra_long_blu <- acc_blue %>% 
+  subset(select = c(DateTime, pitch, roll, anorm)) %>% 
+  pivot_longer(!DateTime, 
+               names_to = "metric", 
+               values_to = "value")
+```
+
+```{r}
+run_tsviewer(acc_blue, "blue")
+```
+
+```{r bot_plot_pra}
+bot_start <- ('2018-09-05 21:14:34')
+bot_end <- ('2018-09-05 21:18:52')
+
+pra_bot_blu <- pra_long_blu %>% 
+  filter(DateTime >= bot_start, DateTime <= bot_end)
+
+pra_bot_plot_blu <- ggplot(pra_bot_blu, aes(x = DateTime, y = value)) +
+  geom_line() +
+  facet_wrap(vars(metric), nrow = 3, scales = "free", strip.position = "left") +
+  theme(line = element_blank(), 
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_blank(),
+        axis.title.x = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        strip.text.y = element_text(size = 16)) +
+  labs(x = "time(h:m)", 
+       y = NULL) 
+  
+pra_bot_plot_blu
+
+```
+
