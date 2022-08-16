@@ -58,5 +58,7 @@ pra_bot_plot_blu <- ggplot(pra_bot_blu, aes(x = DateTime, y = value)) +
   
 pra_bot_plot_blu
 
+ggsave("figures/bw_pra_bottom.jpg", pra_bot_plot_blu, device = "jpeg", width = 10, height = 7)
+
 ```
 
