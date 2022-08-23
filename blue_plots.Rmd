@@ -44,6 +44,8 @@ bot_end <- ('2018-09-05 21:18:52')
 pra_bot_blu <- pra_long_blu %>% 
   filter(DateTime >= bot_start, DateTime <= bot_end)
 
+#pra_bot_blu$metric[pra_bot_blu$metric == "anorm"] <- "accel." #rename to accel. for the poster 
+
 pra_bot_plot_blu <- ggplot(pra_bot_blu, aes(x = DateTime, y = value)) +
   geom_line() +
   facet_wrap(vars(metric), nrow = 3, scales = "free", strip.position = "left") +
