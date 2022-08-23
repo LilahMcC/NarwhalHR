@@ -37,7 +37,7 @@ acc_wide_balder <- calc_pra("balder", Inf)
 depth_balder <- read_depth(find_depth("balder"))
 ```
 
-```{r combine}
+```{r combine, echo = FALSE, message = FALSE}
 
 #comb_acc_depth takes in a acc_wide 100hz and depth 1hz  df and combines them to create a 10hz df. 
 #Parameters: 
@@ -57,7 +57,7 @@ ten_hz_balder <- comb_acc_depth(acc_wide_balder, depth_balder)
                                 
 ```
 
-```{r save}
+```{r save, echo = FALSE, message = FALSE}
 saveRDS(ten_hz_asgeir, "data/derived_data/biologging/Asgeir_10hz.rds")
 saveRDS(ten_hz_balder, "data/derived_data/biologging/Balder_10hz.rds")
 ```
