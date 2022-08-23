@@ -112,7 +112,7 @@ pra_plot <- ggplot(pra_ml, aes(x = DateTime, y = value, color = ml, group = 1)) 
 
 pra_plot
 
-ggsave("figures/static_period_poster.jpg", pra_plot, device="jpeg", width = 10, height = 7)
+#ggsave("figures/static_period.jpg", pra_plot, device="jpeg", width = 10, height = 7)
 ```
                      
 ```{r bottom_plot_nar}
@@ -122,6 +122,8 @@ bot_end <- ymd_hms('2018-08-25 22:10:54')
 pra_bottom <- pra_long %>% 
   filter(DateTime >= bot_start, DateTime <= bot_end)
 
+pra_bottom$metric[pra_bottom$metric == "anorm"] <- "accel."
+ 
 pra_bot_plot <- ggplot(pra_bottom, aes(x = DateTime, y = value)) +
   geom_line() +
   facet_wrap(vars(metric), nrow = 3, scales = "free", strip.position = "left") +
