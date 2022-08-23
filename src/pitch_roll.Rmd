@@ -17,28 +17,24 @@ source("src/util.R")
 source("src/data.R")
 ```
 
-```{r read_into_wide,  echo = FALSE, message = FALSE}
-acc_wide_asgeir <- read_acc("asgeir",  nrow = Inf) %>% 
-  mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
-         pitch = pitch(acc_x, anorm),
-         roll = roll(acc_y, acc_z)) 
+```{r read,  echo = FALSE, message = FALSE}
+ten_hz_asgeir <- readRDS(find_10hz("asgeir"))
 ```
 
 ```{r pivot_longer, echo = FALSE, message = FALSE}
-acc_long <- acc_wide_asgeir %>% 
+acc_long <- ten_hz_asgeir %>% 
   subset(select = c(DateTime, acc_x, acc_y, acc_z)) %>% 
   pivot_longer(!DateTime, 
                names_to = "axis", 
                values_to = "acc")
 
-pra_long <- acc_wide_asgeir %>% 
+pra_long <- ten_hz_asgeir %>% 
   subset(select = c(DateTime, pitch, roll, anorm)) %>% 
   pivot_longer(!DateTime, 
                names_to = "metric", 
                values_to = "value")
 ```
 
-plot figures: 
 ```{r plot figures, echo = FALSE, message = FALSE}
 #define start and end times: 
 start_time <- ymd_hms('2018-08-24 08:26:01')
@@ -47,19 +43,6 @@ end_time <- ymd_hms('2018-08-24 08:57:00')
 #plot depth
 depth_data <- read_depth(find_depth("asgeir"))
 plot_dive(depth_data, start_time, end_time)
-
-#plot anorm
-plot_calculated(acc_wide_asgeir, start_time, end_time, anorm)
-
-#plot pitch
-plot_calculated(acc_wide_asgeir, start_time, end_time, pitch)
-#appears as if they define positive pitch as animal tilted downward (head-first)
-
-#plot roll
-plot_calculated(acc_wide_asgeir, start_time, end_time, roll)
-
-#plot acceleration 
-plot_acc(acc_long, start_time, end_time)
 ```
 
 
@@ -76,6 +59,8 @@ pra_ml <- pra_long %>%
     DateTime <= start_ml | DateTime > end_ml ~ "movement",
     DateTime > start_ml & DateTime <= end_ml ~ "static"))
 
+pra_ml$metric[pra_ml$metric == "anorm"] <- "||A||"
+
 
 pra_plot <- ggplot(pra_ml, aes(x = DateTime, y = value, color = ml, group = 1)) +
   geom_line() +
@@ -91,31 +76,15 @@ pra_plot <- ggplot(pra_ml, aes(x = DateTime, y = value, color = ml, group = 1)) 
        y = NULL,
        color = NULL) +
   scale_color_manual(values = c("808080", "#E78AC3"))
-                     
-# Poster Figure Modifications: 
-# pra_ml$metric[pra_ml$metric == "anorm"] <- "acceleration"
-# 
-# pra_plot <- ggplot(pra_ml, aes(x = DateTime, y = value, color = ml, group = 1)) +
-#   geom_line() +
-#   facet_wrap(vars(metric), nrow = 3, scales = "free", strip.position = "left") +
-#   theme(line = element_blank(), 
-#         axis.text.x = element_text(size = 12),
-#         axis.text.y = element_blank(),
-#         axis.title.x = element_text(size = 28),
-#         legend.position = "none",
-#         strip.text.y = element_text(size = 28),
-#         panel.background = element_rect(fill = "#F5F5F5", colour = "#F5F5F5")) +
-#   labs(x = "time(s)", 
-#        y = NULL, 
-#        color = NULL) +
-#   scale_color_manual(values = c("808080", "#E78AC3"))
 
 pra_plot
 
-#ggsave("figures/static_period.jpg", pra_plot, device="jpeg", width = 10, height = 7)
+ggsave("figures/static_period.jpg", pra_plot, device="jpeg", width = 10, height = 7)
 ```
-                     
-```{r bottom_plot_nar}
+
+
+```{r bottom_plot}
+#plot pra for bottom phase of a dive for a narwhal 
 bot_start <- ymd_hms('2018-08-25 22:07:43') 
 bot_end <- ymd_hms('2018-08-25 22:10:54')
 
@@ -123,7 +92,7 @@ pra_bottom <- pra_long %>%
   filter(DateTime >= bot_start, DateTime <= bot_end)
 
 pra_bottom$metric[pra_bottom$metric == "anorm"] <- "accel."
- 
+
 pra_bot_plot <- ggplot(pra_bottom, aes(x = DateTime, y = value)) +
   geom_line() +
   facet_wrap(vars(metric), nrow = 3, scales = "free", strip.position = "left") +
@@ -135,12 +104,11 @@ pra_bot_plot <- ggplot(pra_bottom, aes(x = DateTime, y = value)) +
         strip.text.y = element_text(size = 16)) +
   labs(x = "time(h:m)", 
        y = NULL) 
-  
+
 pra_bot_plot
 
 ggsave("figures/asgeir_pra_bottom.jpg", dev = "jpeg", width = 10, height = 7)
 
 ```
 
-                     
-                     
+
