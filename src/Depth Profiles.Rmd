@@ -90,18 +90,18 @@ one_dive <- filter(depth_balder, DateTime >= start_time, DateTime <= end_time) %
 dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = phase, group = 1)) +
   geom_line(size = 1.2) +
   scale_y_reverse() + #makes depth right orientation 
-  labs(x = "Time",
+  labs(x = "Time (h:m)",
        y = "Depth (m)") + #changes labels on axes and title 
-  theme(line = element_blank(), 
-        rect = element_blank(), 
+  theme(axis.line = element_line(), 
+        rect = element_blank(),
         text = element_text(size = 16),
-        axis.text.x = element_blank(), 
-        axis.text.y = element_blank(), 
+        # axis.text.x = element_blank(), 
+        # axis.text.y = element_blank(), 
         legend.title = element_blank()
   ) + 
   scale_color_manual(values = c("#A6D854", "#FC8D62", "#77CCFF", "#E78AC3", "#8DA0CB")) #choose color scheme
 dive_plot
 
-#ggsave("figures/balder_dive_phases.jpg", dive_plot, device="jpeg", width = 10, height = 7)
+ggsave("figures/balder_dive_phases.jpg", dive_plot, device="jpeg", width = 10, height = 7)
 ```
 
