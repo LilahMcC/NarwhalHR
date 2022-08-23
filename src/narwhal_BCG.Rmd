@@ -189,13 +189,13 @@ calc_s2n <- function(df, verbose = FALSE) {
     filter(freq_bpm <= 50) #removes any rows where freq_bpm > 50 bpm, since this is outside the expected range of a narwhal hr. 
   
   
-  signal_rng <- case_when(
+signal_rng <- case_when(
   keep_phase == "descent" | 
     keep_phase == "bottom" |
     keep_phase == "ascent" ~ c(5, 25),
   keep_phase == "subsurface" ~ c(50, 70), #look into this 
   keep_phase == "surface" ~ c(50, 70))
-  
+
   signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2])) #creates a new df with same cols and values from psd_df, but only includes rows in which freq_bpm is between 10 and 20 bpm. 
   
   psd_s2n <- psd_df %>% # creates a df with 3 columns: signal,  noise, and s2n (signal-to-noise-ratio) Values for s2n should be at least > 1. 
