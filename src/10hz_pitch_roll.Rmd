@@ -18,7 +18,12 @@ source("src/data.R")
 ```
 
 ```{r read,  echo = FALSE, message = FALSE}
-calc_pra <- function(narwhal_id, nrow) {
+#calc_pra calculates pitch, roll, and anorm columns and adds them onto a tri-axial acc. df with dt. 
+#parameters: 
+#narwhal_id - the name of the narwhal in quotes. eg: "asgeir"
+#nrow - number of rows to read from the tsv file. Default is Inf (infinite)
+
+calc_pra <- function(narwhal_id, nrow = Inf) {
   read_acc(narwhal_id, nrow) %>% 
   mutate(anorm = anorm(cbind(acc_x, acc_y, acc_z)),
          pitch = pitch(acc_x, anorm),
