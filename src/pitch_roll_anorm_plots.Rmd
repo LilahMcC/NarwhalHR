@@ -21,13 +21,7 @@ source("src/data.R")
 ten_hz_asgeir <- readRDS(find_10hz("asgeir"))
 ```
 
-```{r pivot_longer, echo = FALSE, message = FALSE}
-acc_long <- ten_hz_asgeir %>% 
-  subset(select = c(DateTime, acc_x, acc_y, acc_z)) %>% 
-  pivot_longer(!DateTime, 
-               names_to = "axis", 
-               values_to = "acc")
-
+```{r pra_long, echo = FALSE, message = FALSE}
 pra_long <- ten_hz_asgeir %>% 
   subset(select = c(DateTime, pitch, roll, anorm)) %>% 
   pivot_longer(!DateTime, 
@@ -35,32 +29,20 @@ pra_long <- ten_hz_asgeir %>%
                values_to = "value")
 ```
 
-```{r plot figures, echo = FALSE, message = FALSE}
-#define start and end times: 
-start_time <- ymd_hms('2018-08-24 08:26:01')
-end_time <- ymd_hms('2018-08-24 08:57:00')
-
-#plot depth
-depth_data <- read_depth(find_depth("asgeir"))
-plot_dive(depth_data, start_time, end_time)
-```
-
-
-```{r plot_tsviewer window}
+```{r ml_highlighted}
 #make a plot with time on x axis, and pitch, roll and anorm on y axis using facetwrap
-start_plot <- ymd_hms('2018-08-27 15:42:20')
-start_ml <- ymd_hms('2018-08-27 15:42:30')
-end_ml <- ymd_hms('2018-08-27 15:42:45')
-end_plot <- ymd_hms('2018-08-27 15:42:55')
+des_start <- ymd_hms('2018-08-27 15:42:20')
+ml_start <- ymd_hms('2018-08-27 15:42:30')
+ml_end <- ymd_hms('2018-08-27 15:42:45')
+des_end <- ymd_hms('2018-08-27 15:42:55')
 
 pra_ml <- pra_long %>% 
-  filter(DateTime >= start_plot, DateTime <= end_plot) %>% 
+  filter(DateTime >= des_start, DateTime <= des_end) %>% 
   mutate(ml = case_when( #assign a dive phase to each time point 
-    DateTime <= start_ml | DateTime > end_ml ~ "movement",
-    DateTime > start_ml & DateTime <= end_ml ~ "static"))
+    DateTime <= ml_start | DateTime > ml_end ~ "movement",
+    DateTime > ml_start & DateTime <= ml_end ~ "static"))
 
 pra_ml$metric[pra_ml$metric == "anorm"] <- "||A||"
-
 
 pra_plot <- ggplot(pra_ml, aes(x = DateTime, y = value, color = ml, group = 1)) +
   geom_line() +
@@ -91,7 +73,7 @@ bot_end <- ymd_hms('2018-08-25 22:10:54')
 pra_bottom <- pra_long %>% 
   filter(DateTime >= bot_start, DateTime <= bot_end)
 
-pra_bottom$metric[pra_bottom$metric == "anorm"] <- "accel."
+pra_bottom$metric[pra_bottom$metric == "anorm"] <- "||A||"
 
 pra_bot_plot <- ggplot(pra_bottom, aes(x = DateTime, y = value)) +
   geom_line() +
