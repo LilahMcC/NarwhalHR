@@ -9,8 +9,6 @@ output:
     theme: default 
     highlights: monotone
 ---
-
-#### Before Starting: Load libraries
 ```{r = load_packages, message = FALSE, results = FALSE}
 library(lubridate)
 library(tidyverse)
@@ -21,38 +19,29 @@ source("src/util.R")
 source("src/data.R")
 ```
 
-#### Read filed into a dataframe, and make DateTimes compatible with POSIXct
 ```{r = fix_datetimes, message = FALSE, results = FALSE}
 depth_asgeir <- read_depth(find_depth("asgeir"))
 depth_balder <- read_depth(find_depth("balder"))
 ```
 
-#### Dive Profile Plots:  
 ```{r = plot_asgeir_depth, echo = FALSE, messages = FALSE}
 # plot whole deployment 
-start_dep_asgeir <- depth_asgeir$DateTime[1]
-end_dep_asgeir <- depth_asgeir$DateTime[nrow(depth_asgeir)]
-plot_dive(depth_asgeir, start_dep_asgeir, end_dep_asgeir, "Asgeir Dive Profile 2018 Deployment")
+dep_start_asgeir <- depth_asgeir$DateTime[1]
+dep_end_asgeir <- depth_asgeir$DateTime[nrow(depth_asgeir)]
+plot_depth(depth_asgeir, dep_start_asgeir, dep_end_asgeir)
 #plot day
-start_day <- ymd_hms('2018-08-24 00:00:00')
-end_day <- start_day + days(1)
-plot_dive(depth_asgeir, start_day, end_day, "Asgeir Dive Profile August 24, 2018")
+day_start <- ymd_hms('2018-08-24 00:00:00')
+day_end <- day_start + days(1)
+plot_depth(depth_asgeir, day_start, day_end)
 #plot one dive 
-start_dive <- ymd_hms('2018-08-24 08:26:01')
-end_dive <- ymd_hms('2018-08-24 08:49:04')
-plot_dive(depth_asgeir, start_dive, end_dive, "Asgeir Dive Profile Single Dive August 24, 2018", TRUE)
+dive_start <- ymd_hms('2018-08-24 08:26:01')
+dive_end <- ymd_hms('2018-08-24 08:49:04')
+plot_depth(depth_asgeir, dive_start, dive_end, interactive = FALSE)
 ```
-
-```{r plot_balder_depth, echo = FALSE, messages = FALSE}
-start_dep_balder <- 	depth_balder$DateTime[1]
-end_dep_balder <- depth_balder$DateTime[nrow(depth_balder)]
-plot_dive(depth_balder, start_time, end_time, "Balder Dive Profile 2018 Deployment", TRUE)
-```
-
 
 ```{r plot_dive_phases}
-start_time <- ymd_hms('2016-08-24 20:43:13')
-end_time <- ymd_hms('2016-08-24 21:02:20')
+time_start <- ymd_hms('2016-08-24 20:43:13')
+time_end <- ymd_hms('2016-08-24 21:02:20')
 
 sur_start <- ymd_hms('2016-08-24 20:43:13')
 sur_end <- ymd_hms('2016-08-24 20:45:23')
@@ -75,7 +64,7 @@ sub_end <- ymd_hms('2016-08-24 21:01:09')
 sur_start_2 <- ymd_hms('2016-08-24 21:01:09')
 sur_end_2 <- ymd_hms('2016-08-24 21:02:20')
 
-one_dive <- filter(depth_balder, DateTime >= start_time, DateTime <= end_time) %>% 
+one_dive <- filter(depth_balder, DateTime >= time_start, DateTime <= time_end) %>% 
   mutate(phase = case_when( #assign a dive phase to each time point 
     DateTime > des_start & DateTime <= des_end ~ "descent",
     DateTime > bot_start & DateTime <= bot_end ~ "bottom", 
@@ -87,7 +76,7 @@ one_dive <- filter(depth_balder, DateTime >= start_time, DateTime <= end_time) %
   ), 
   phase = factor(phase, levels = c("surface", "descent", "bottom", "ascent", "subsurface"))) #reorder the dive phases in the plot legend 
 
-dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = phase, group = 1)) +
+phase_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = phase, group = 1)) +
   geom_line(size = 1.2) +
   scale_y_reverse() + #makes depth right orientation 
   labs(x = "Time (h:m)",
@@ -95,13 +84,11 @@ dive_plot <- ggplot(one_dive, aes(x = DateTime, y = Depth, color = phase, group 
   theme(axis.line = element_line(), 
         rect = element_blank(),
         text = element_text(size = 16),
-        # axis.text.x = element_blank(), 
-        # axis.text.y = element_blank(), 
         legend.title = element_blank()
   ) + 
-  scale_color_manual(values = c("#A6D854", "#FC8D62", "#77CCFF", "#E78AC3", "#8DA0CB")) #choose color scheme
-dive_plot
+  scale_color_manual(values = c("#A6D854", "#FC8D62", "#77CCFF", "#E78AC3", "#8DA0CB")) #FIXME colorblind friendly palette.  
+phase_plot
 
-ggsave("figures/balder_dive_phases.jpg", dive_plot, device="jpeg", width = 10, height = 7)
+ggsave("figures/balder_dive_phases.jpg", phase_plot, device="jpeg", width = 10, height = 7)
 ```
 
