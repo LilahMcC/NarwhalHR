@@ -1,5 +1,5 @@
 ---
-title: "narwhal_BCG"
+title: "narwhal_bcg"
 author: "Lilah McCormick"
 date: '2022-07-25'
 output: html_document
