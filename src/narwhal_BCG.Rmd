@@ -15,23 +15,14 @@ source("src/data.R")
 
 ```{r vars}
 narwhal_id <- "balder"
-win_s <- 2.0
+win_s <- 0.5
 acc_fs <- 100
 upper <- 30
-keep_phase <- "subsurface"
+keep_phase <- "descent"
 by_criteria <- FALSE
 ```
 
 ```{r filter}
-#reads motionless data from best (>60 s total bottom time per dive) periods into a dataframe with columns: time_start, time_end, and region_id 
-ml_best <- function(narwhal_id){
-  read_tsv(find_motionless(narwhal_id)) %>% 
-  filter(meets_criteria == "Y") %>% 
-  mutate(region_id = row_number()) %>% #add rid col
-  select(-c(duration, narwhal_id, dive_phase, notes, meets_criteria)) %>% 
-  arrange(time_start)
-}
-
 #ml_phase creates a df with 3 columns (time_start, time_end, and region_id) of  motionless periods, filtered by dive_phase.
 #Parameters
 #narwhal_id - narwhal identification in quotes. eg: "asgeir"
@@ -42,18 +33,9 @@ ml_phase <- function(narwhal_id, keep_phase) {
     filter(dive_phase %in% keep_phase) %>% #filter by dive phase 
     select(-c(duration, narwhal_id, meets_criteria, dive_phase, notes)) %>% #remove unneeded columns
     arrange(time_start) #%>% order chronologically
-    #FIXME 
-    # filter(region_id != 243) 
 }
-```
 
-```{r ml_df}
-#filter the ml data into a smaller dataframe based on desired dive phases. 
-if(by_criteria) {
-  ml_filt <- ml_best(narwhal_id)
-} else {
-    ml_filt <- ml_phase(narwhal_id, keep_phase)
-}
+ml_filt <- ml_phase(narwhal_id, keep_phase)
 ```
 
 ```{r narwhal_beats}
@@ -128,7 +110,7 @@ narwhal_100hz <- narwhal_beats(ml_filt,
                                win_s,
                                acc_fs,
                                upper,
-                               narwhal_acc) #should rid = NA in some cases?
+                               narwhal_acc)
 ```
 
 ```{r s2n_plot_once}
@@ -142,11 +124,11 @@ psd_df <- tibble(
   filter(freq_bpm <= 50)
 
 signal_rng <- case_when(
-  keep_phase == "descent" ~ c(10, 30), #should i change this back to 10-20
+  keep_phase == "descent" ~ c(5,25), #should i change this back to 10-20
   keep_phase == "subsurface" ~ c(50, 70), 
-  keep_phase == "bottom" ~ c(5, 15), 
+  keep_phase == "bottom" ~ c(5, 25), 
   keep_phase == "surface" ~ c(50, 70), 
-  keep_phase == "ascent" ~ c(10, 30)
+  keep_phase == "ascent" ~ c(5, 25)
 )
 
 signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2]))
@@ -166,14 +148,15 @@ s2n_plot <- ggplot(psd_df, aes(x = freq_bpm, y = spec)) +
            label = sprintf("S2N=%0.3f", psd_s2n$s2n)) +
   labs(x = "Frequency (bpm)",
        y = "Power spectral density") +
-  theme_classic()
+  theme_classic() + 
+  ylim(0,.004)
 
 s2n_plot
 ```
 
 
 ```{r calc_s2n}
-#calc_s2n takes in a dataframe (eg. narwhal_100hz), and returns the signal to noise ratio for jerk_smooth for that df, using a signal range of 10 - 20 bpm. 
+#calc_s2n takes in a dataframe (eg. narwhal_100hz), and returns the signal to noise ratio for jerk_smooth for that df, using a signal range depending on the dive phase. 
 #Parameters: 
 #df - a dataframe with columns jerk_smooth and rid. 
 #verbose - boolean. If TRUE, will return a list with items psd_df, and s2n. If false, will return just s2n. 
@@ -193,7 +176,7 @@ signal_rng <- case_when(
   keep_phase == "descent" | 
     keep_phase == "bottom" |
     keep_phase == "ascent" ~ c(5, 25),
-  keep_phase == "subsurface" ~ c(50, 70), #look into this 
+  keep_phase == "subsurface"| 
   keep_phase == "surface" ~ c(50, 70))
 
   signal_df <- filter(psd_df, between(freq_bpm, signal_rng[1], signal_rng[2])) #creates a new df with same cols and values from psd_df, but only includes rows in which freq_bpm is between 10 and 20 bpm. 
@@ -216,7 +199,7 @@ signal_rng <- case_when(
 ```
 
 
-```{r}
+```{r gridsearch}
 #returns a the s2n ratio for window size, upper limit, and dive phase combination.
 #Parameters 
 #win_size - for all windowed operations (a number)
@@ -258,7 +241,7 @@ quality_check <- function(win_size, upper, dive_phase, narwhal_acc, plots = FALS
 
 win_sizes <- c(0.5, 1.0, 1.5, 2.0)
 uppers <- c(10, 15, 20, 25, 30)
-dive_phase <- keep_phase
+dive_phase <- c("bottom", "descent", "subsurface", "ascent")
 s2ns <- expand_grid(
   win_size = win_sizes,
   upper = uppers, 
@@ -267,6 +250,8 @@ s2ns <- expand_grid(
   mutate(s2n = pmap_dbl(.,
                         quality_check, 
                         narwhal_acc))
+#surface 
+saveRDS(s2ns, "data/derived_data/s2ns/s2n_allphases_0525_5070_balder.rds")
 ```
 
 ```{r s2ns_plot}
